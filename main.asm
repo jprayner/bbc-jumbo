@@ -30,7 +30,6 @@ ORG &70
   .MessageIdx   SKIP 1
   .Temp         SKIP 1
   .Flags        SKIP 1
-  .ScrollVal    SKIP 1
   .ScrollCount  SKIP 1
   .Copy2PixelStripCharColumn                SKIP 1
   .Copy2PixelStrip2PixelSliceOffset         SKIP 1
@@ -58,6 +57,7 @@ ORG &2000         ; code origin (like P%=&2000)
     LDA #22:JSR oswrch
     LDA #2:JSR oswrch
 
+    .restart
     LDA #message MOD 256
     STA MessagePtr
     LDA #message DIV 256
@@ -68,7 +68,7 @@ ORG &2000         ; code origin (like P%=&2000)
     LDY #0
     .messageLoop
     LDA (MessagePtr), Y
-    BEQ foreever
+    BEQ restart
     JSR scrollSingleChar
     INY
     JMP messageLoop
@@ -98,7 +98,6 @@ RTS
     LDX #0
 
     .shiftLoop
-    JSR Copy2PixelStrip
     ;JSR delay
     JSR waitForKey
 
@@ -106,9 +105,17 @@ RTS
     CPX #32
     BEQ scrollSingleCharDone
 
+    JSR Copy2PixelStrip
+
     .scrollLeft2Pixels
-    DEC ScrollVal
-    BEQ resetScroll
+    INC ScrollCount
+    LDA ScrollCount
+    CMP #(20 * 4)
+    BEQ dontResetScrollCount
+    LDA #0
+    STA ScrollCount
+    .dontResetScrollCount
+
     CLC
     INC ScrollPtr
     BCC scrollLeft2PixelsDone
@@ -127,64 +134,14 @@ RTS
 
     JMP shiftLoop
 
-.resetScroll
-    INC ScrollCount
-    LDY ScrollCount
-
-    ;LDA #vid_mem MOD 2048
-    ;STA ScrollPtr
-    ;LDA #vid_mem DIV 2048
-    ;STA ScrollPtr + 1
-
-    ; double this value each time to scroll up one row and keep things lined up
-
-    ; R12 and R13 are the screen start address / 8
-    ;CLC
-    ;LDA ScrollPtr
-    ;ADC #80
-    ;STA ScrollPtr
-    ;BCC skipVerticalScrollMsbAdd
-    ;INC ScrollPtr + 1
-    ;.skipVerticalScrollMsbAdd
-
-    LDA #80
-    STA ScrollVal
-
-    JMP shiftLoop
-;.resetScroll
-;    LDA MessageIdx
-;    CMP #5
-;    BEQ resetScroll2
-
-.resetScroll1
-    LDA #&4F ; TODO: tidy up!
-    STA ScrollPtr
-    LDA #vid_mem DIV 2048
-    STA ScrollPtr + 1
-    LDA #80
-    STA ScrollVal
-
-    JMP shiftLoop
-
-.resetScroll2
-    LDA #&9e ; TODO: tidy up!
-    STA ScrollPtr
-    LDA #vid_mem DIV 2048
-    STA ScrollPtr + 1
-    LDA #80
-    STA ScrollVal
-
-    JMP shiftLoop
-
 .initScroll
     LDA #vid_mem MOD 2048
     STA ScrollPtr
     LDA #vid_mem DIV 2048
     STA ScrollPtr + 1
-    LDA #80
-    STA ScrollVal
     LDA #0
     STA MessageIdx
+    LDA #0
     STA ScrollCount
 
     LDA #crtc_reg_screen_start_l
@@ -282,6 +239,15 @@ RTS
     ADC #19
     TAX
 
+    ;LDA ScrollCount
+    ;ASL A
+    ;ASL A
+    ;ASL A
+    ;CLC
+    ;ADC Copy2PixelStripCharColumn
+    ;ADC #19
+    ;TAX
+
     JSR VidMemForXY
     LDA VidMemPtr
     STA DestPtr
@@ -343,7 +309,7 @@ RTS
     RTS
 
 .message
-    EQUS "Klmnopq"
+    EQUS "ABCDEFGH"
     EQUB 0
 
 INCLUDE "jumbo.asm"
