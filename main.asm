@@ -101,8 +101,6 @@ RTS
     .shiftLoop
     JSR delay
 
-    JSR Copy2PixelStrip
-
     .scrollLeft2Pixels
     CLC
     INC ScrollPtr
@@ -119,6 +117,8 @@ RTS
     STA crtc_reg
     LDA ScrollPtr + 1
     STA crtc_val
+
+    JSR Copy2PixelStrip
 
     INX
     CPX #32
@@ -153,14 +153,17 @@ RTS
     RTS
 
 .scrollSingleCharDone
-    ; keep track of character MOD 20 (0-19)
+    ; keep track of character MOD 8 (0-7)
     INC ScrollCount
     LDA ScrollCount
-    CMP #20
+    CMP #8
     BCC dontResetScrollCount
     .resetScrollCount
     LDA #0
     STA ScrollCount
+
+    ;JSR initScroll
+
     .dontResetScrollCount
 
     INC MessageIdx
@@ -308,7 +311,7 @@ RTS
     RTS
 
 .message
-    EQUS "Booyakasha!"
+    EQUS "0123456789ABCDEF0123456789"
      
     EQUB 0
 
