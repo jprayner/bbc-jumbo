@@ -68,8 +68,9 @@ ORG &2000         ; code origin (like P%=&2000)
     LDY #0
     .messageLoop
     LDA (MessagePtr), Y
-    BEQ restart
+    BEQ foreever
     JSR scrollSingleChar
+JSR waitForKey
     INY
     JMP messageLoop
 
@@ -98,24 +99,11 @@ RTS
     LDX #0
 
     .shiftLoop
-    ;JSR delay
-    JSR waitForKey
-
-    INX
-    CPX #32
-    BEQ scrollSingleCharDone
+    JSR delay
 
     JSR Copy2PixelStrip
 
     .scrollLeft2Pixels
-    INC ScrollCount
-    LDA ScrollCount
-    CMP #(20 * 4)
-    BEQ dontResetScrollCount
-    LDA #0
-    STA ScrollCount
-    .dontResetScrollCount
-
     CLC
     INC ScrollPtr
     BCC scrollLeft2PixelsDone
@@ -131,6 +119,10 @@ RTS
     STA crtc_reg
     LDA ScrollPtr + 1
     STA crtc_val
+
+    INX
+    CPX #32
+    BEQ scrollSingleCharDone
 
     JMP shiftLoop
 
@@ -161,9 +153,16 @@ RTS
     RTS
 
 .scrollSingleCharDone
-    ; keep track of character MOD 6 (0-5) to know when to reset scroll
-    ; and where in video memory to copy characters. After 6 chars we are neatly
-    ; back to start of scroll window and are in-between characters.
+    ; keep track of character MOD 20 (0-19)
+    INC ScrollCount
+    LDA ScrollCount
+    CMP #20
+    BCC dontResetScrollCount
+    .resetScrollCount
+    LDA #0
+    STA ScrollCount
+    .dontResetScrollCount
+
     INC MessageIdx
     ;LDA MessageIdx
     ;CMP #6
@@ -179,6 +178,7 @@ RTS
     PLA
     RTS
 
+; x: 2-pixel vertical strip index within character (in range 0-31, given we have 64-pixel wide characters)
 .Copy2PixelStrip
     TXA
     PHA
@@ -191,7 +191,7 @@ RTS
     ASL A
     STA Copy2PixelStrip2PixelSliceOffset
 
-    ; divide by 4 to get the column offset in chars (there are 4x 2-pixel shifts per char)
+    ; divide by 4 to get the column offset in char positions (there are 4x 2-pixel shifts per char)
     .CalcCharColumnOffset
     PLA
     PHA
@@ -205,13 +205,14 @@ RTS
 
     .Copy2PixelStripLoop
 
+    ; Find source address
+
     ; We're copying from row in Temp (+24 to find offscreen position where character has been drawn) and column derived from X on entry
     LDA Temp
     CLC
     ADC #24
     TAY
     LDX Copy2PixelStripCharColumn
-
     JSR VidMemForXY
     LDA VidMemPtr
     STA SrcPtr
@@ -227,6 +228,8 @@ RTS
     INC SrcPtr + 1
     .SkipMSBAdd
 
+    ; Find destination address
+
     ; Row is in Temp; column is 19 + char pos * 8 (19 being rightmost column before scroll)
     LDA Temp
     TAY
@@ -236,15 +239,11 @@ RTS
     ASL A
     CLC
     ADC Copy2PixelStripCharColumn
-    ADC #19
+    ADC #20
     TAX
 
     ;LDA ScrollCount
-    ;ASL A
-    ;ASL A
-    ;ASL A
     ;CLC
-    ;ADC Copy2PixelStripCharColumn
     ;ADC #19
     ;TAX
 
@@ -309,7 +308,8 @@ RTS
     RTS
 
 .message
-    EQUS "ABCDEFGH"
+    EQUS "Booyakasha!"
+     
     EQUB 0
 
 INCLUDE "jumbo.asm"
