@@ -104,7 +104,7 @@ RTS
     .scrollLeft2Pixels
     CLC
     INC ScrollPtr
-    BCC scrollLeft2PixelsDone
+    BNE scrollLeft2PixelsDone
     INC ScrollPtr + 1
     .scrollLeft2PixelsDone
 
