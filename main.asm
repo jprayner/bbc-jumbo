@@ -57,6 +57,18 @@ ORG &2000         ; code origin (like P%=&2000)
     LDA #22:JSR oswrch
     LDA #2:JSR oswrch
 
+    LDX #0
+    LDY #0
+    .TestLoop
+    JSR waitForKey
+    LDA #65
+    JSR PrintBigChar
+    INX
+    CPX #8
+    BEQ foreever
+    JMP TestLoop
+
+
     .restart
     LDA #message MOD 256
     STA MessagePtr
@@ -70,7 +82,7 @@ ORG &2000         ; code origin (like P%=&2000)
     LDA (MessagePtr), Y
     BEQ foreever
     JSR scrollSingleChar
-JSR waitForKey
+;JSR waitForKey
     INY
     JMP messageLoop
 
@@ -90,16 +102,16 @@ RTS
     TYA
     PHA
 
-    ; draw character starting from row 24
-    LDA Temp
-    LDY #24
-    JSR PrintBigChar
-
     ; init strip counter (0-31)
     LDX #0
 
     .shiftLoop
     JSR delay
+
+    ; draw section of character starting from row 24
+    LDA Temp
+    LDY #24
+    JSR PrintBigChar
 
     .scrollLeft2Pixels
     CLC
@@ -311,7 +323,7 @@ RTS
     RTS
 
 .message
-    EQUS "0123456789ABCDEF0123456789"
+    EQUS "Jim rocks, Bartek sux! Hahahahaha!"
      
     EQUB 0
 

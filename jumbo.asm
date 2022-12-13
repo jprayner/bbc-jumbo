@@ -22,20 +22,30 @@ col_flash_white_black = 15
 .PrintBigChar
 ;   Print given ASCII at 8x size i.e. 64x64 pixels
 ;   a: character to print
+;   x: X column within chararacter within enlarged char in range 0-8
 ;   y: Y character co-ord for top of character
 ;--------------------------------------------------
+    STX ScreenCharX
     STY CharOffsetY
     JSR CharSrcPtrForASCII
+
+    ; Mask for pixel in X pos of source character
+    LDX ScreenCharX
+    LDA #128
+    .setXmaskLoop
+    DEX
+    BMI setXmaskDone
+    CLC
+    ROR A
+    JMP setXmaskLoop
+    .setXmaskDone
+    STA CharPixelMask
+    LDX ScreenCharX
 
     LDY #0                         ; char row in Y
     STY ScreenCharY
 
     .PrintBigCharRow
-        LDX #0                      ; char col in X
-        STX ScreenCharX
-        LDA #128                    ; set MSB - mask first column of char map
-        STA CharPixelMask
-
         .PrintBigCharPrintBlock
             LDA (CharPtr), Y
             AND CharPixelMask
@@ -46,7 +56,7 @@ col_flash_white_black = 15
             PLA
             STA CharPixelMask
 
-            JMP PrintBigCharNextCol
+            JMP PrintBigCharNextRow
 
         .PrintBigCharPixelNotSet
             LDA CharPixelMask
@@ -54,15 +64,6 @@ col_flash_white_black = 15
             JSR DrawCustomInfillChar
             PLA
             STA CharPixelMask
-
-        .PrintBigCharNextCol
-            INX
-            CPX #8
-            BEQ PrintBigCharNextRow
-            STX ScreenCharX
-            CLC
-            ROR CharPixelMask
-            JMP PrintBigCharPrintBlock
 
         .PrintBigCharNextRow 
             INY
