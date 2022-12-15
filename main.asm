@@ -1,3 +1,6 @@
+IRQ1V = &204
+IRQ2V = &206
+
 osrdch = &FFE0
 oswrch = &FFEE
 osasci = &FFE3
@@ -20,6 +23,7 @@ crtc_reg_screen_start_l = &0D
 osbyte_inkey = &81
 
 ORG &70
+GUARD &9F
   .VidMemPtr    SKIP 2
   .TablePtr     SKIP 2
   .CharPtr      SKIP 2
@@ -33,9 +37,12 @@ ORG &70
   .ScrollCount  SKIP 1
   .Copy2PixelStripCharColumn                SKIP 1
   .Copy2PixelStrip2PixelSliceOffset         SKIP 1
+  .timer_count   SKIP 1
+  .tick_flag     SKIP 1
+  .old_irqv     SKIP 2
 
 ORG &2000         ; code origin (like P%=&2000)
-
+GUARD &3000
 
 .start
 
@@ -57,17 +64,8 @@ ORG &2000         ; code origin (like P%=&2000)
     LDA #22:JSR oswrch
     LDA #2:JSR oswrch
 
-    LDX #0
-    LDY #0
-    .TestLoop
-    JSR waitForKey
-    LDA #65
-    JSR PrintBigChar
-    INX
-    CPX #8
-    BEQ foreever
-    JMP TestLoop
-
+    JSR setupInterruptHandler
+    ;JMP foreever
 
     .restart
     LDA #message MOD 256
@@ -91,10 +89,82 @@ ORG &2000         ; code origin (like P%=&2000)
 
 RTS
 
+.setupInterruptHandler
+    SEI
+
+    ; Set Timer 1 to operate in continuous mode
+    LDA #&40
+    STA &FE6B
+
+    ; enable Timer 1 interrupt
+    LDA #%11000000
+    STA &FE6E ; interrupt enable register
+
+    ; Store old IRQ1V
+    LDA IRQ1V
+    STA old_irqv
+    LDA IRQ1V+1
+    STA old_irqv + 1
+
+    ; Setup IRQ handler
+    LDA #irq_handler MOD 256
+    STA IRQ1V
+    LDA #irq_handler DIV 256
+    STA IRQ1V + 1
+
+    ; Trigger after 10k cycles == 1 MHz 0.001 milliseconds x 10k == 0.01 seconds
+    LDA #10000 MOD 256
+    STA &FE66 ; latch register (low)
+    STA &FE64 ; initial time (low)
+    LDA #10000 DIV 256
+    STA &FE66 ; latch register (high)
+    STA &FE65 ; initial time (high) triggers start of timer
+
+    CLI
+    RTS
+
+.irq_handler
+    LDA &FC
+    PHA
+    TXA
+    PHA
+    TYA
+    PHA
+
+    LDA &FE6D ; System VIA interrupt flag register
+    AND #%10000000
+    BEQ irq_handler_done
+
+    ; Clear timer 1 interrupt flag on System VIA
+    LDA &FE64
+
+    INC timer_count
+    LDA timer_count
+    CMP #&84
+    BPL irq_handler_done
+
+    LDA #1
+    STA tick_flag
+    STA timer_count
+
+    .irq_handler_done
+
+    ; todo
+    PLA
+    TAY
+    PLA
+    TAX
+    PLA
+    STA &FC
+    RTI
+
+.currentChar
+    EQUB 0
+
 ; a: char to scroll
 ; x: char index
 .scrollSingleChar
-    STA Temp
+    STA currentChar
 
     PHA
     TXA
@@ -106,10 +176,13 @@ RTS
     LDX #0
 
     .shiftLoop
-    JSR delay
+    LDA tick_flag
+    BEQ shiftLoop
+    LDA #0
+    STA tick_flag
 
     ; draw section of character starting from row 24
-    LDA Temp
+    LDA currentChar
     LDY #24
     JSR PrintBigChar
 
@@ -298,7 +371,7 @@ RTS
 
 .delay
     PHA
-    LDA #$b0
+    LDA #$e0
     STA Temp  ; high byte
     .delayloop
     ADC #01

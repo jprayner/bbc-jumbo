@@ -22,12 +22,22 @@ col_flash_white_black = 15
 .PrintBigChar
 ;   Print given ASCII at 8x size i.e. 64x64 pixels
 ;   a: character to print
-;   x: X column within chararacter within enlarged char in range 0-8
+;   x: 2-char vertical strip index within enlarged char (range 0-31)
 ;   y: Y character co-ord for top of character
 ;--------------------------------------------------
     STX ScreenCharX
     STY CharOffsetY
     JSR CharSrcPtrForASCII
+
+    ; Save x to stack
+    LDA ScreenCharX
+    PHA
+
+    ; Divide x by 4 to get range 0-7
+    CLC
+    ROR ScreenCharX
+    CLC
+    ROR ScreenCharX
 
     ; Mask for pixel in X pos of source character
     LDX ScreenCharX
@@ -73,6 +83,8 @@ col_flash_white_black = 15
             JMP PrintBigCharRow
 
     .PrintBigCharDone
+    PLA
+    TAX
 RTS
 
 ;--------------------------------------------------
