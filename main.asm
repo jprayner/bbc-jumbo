@@ -92,13 +92,9 @@ RTS
 .setupInterruptHandler
     SEI
 
-    ; Set Timer 1 to operate in continuous mode
-    LDA #&40
-    STA &FE6B
-
-    ; enable Timer 1 interrupt
-    LDA #%11000000
-    STA &FE6E ; interrupt enable register
+    ; enable vsync interrupt
+    LDA #%10000010
+    STA &FE4E ; interrupt enable register
 
     ; Store old IRQ1V
     LDA IRQ1V
@@ -112,14 +108,6 @@ RTS
     LDA #irq_handler DIV 256
     STA IRQ1V + 1
 
-    ; Trigger after 10k cycles == 1 MHz 0.001 milliseconds x 10k == 0.01 seconds
-    LDA #10000 MOD 256
-    STA &FE66 ; latch register (low)
-    STA &FE64 ; initial time (low)
-    LDA #10000 DIV 256
-    STA &FE66 ; latch register (high)
-    STA &FE65 ; initial time (high) triggers start of timer
-
     CLI
     RTS
 
@@ -131,17 +119,16 @@ RTS
     TYA
     PHA
 
-    LDA &FE6D ; System VIA interrupt flag register
-    AND #%10000000
+    LDA &FE4D ; System VIA interrupt flag register
+    AND #%00000010 ; vsync interrupt flag
     BEQ irq_handler_done
 
-    ; Clear timer 1 interrupt flag on System VIA
-    LDA &FE64
+    STA &FE4D ; clear flag
 
     INC timer_count
     LDA timer_count
-    CMP #&84
-    BPL irq_handler_done
+    CMP #3
+    BMI irq_handler_done
 
     LDA #1
     STA tick_flag
@@ -176,10 +163,6 @@ RTS
     LDX #0
 
     .shiftLoop
-    LDA tick_flag
-    BEQ shiftLoop
-    LDA #0
-    STA tick_flag
 
     ; draw section of character starting from row 24
     LDA currentChar
@@ -202,6 +185,12 @@ RTS
     STA crtc_reg
     LDA ScrollPtr + 1
     STA crtc_val
+
+    .waitLoop
+    LDA tick_flag
+    BEQ waitLoop
+    LDA #0
+    STA tick_flag
 
     JSR Copy2PixelStrip
 
