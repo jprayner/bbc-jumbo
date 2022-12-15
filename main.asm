@@ -169,6 +169,12 @@ RTS
     LDY #24
     JSR PrintBigChar
 
+    .waitLoop
+    LDA tick_flag
+    BEQ waitLoop
+    LDA #0
+    STA tick_flag
+
     .scrollLeft2Pixels
     CLC
     INC ScrollPtr
@@ -185,12 +191,6 @@ RTS
     STA crtc_reg
     LDA ScrollPtr + 1
     STA crtc_val
-
-    .waitLoop
-    LDA tick_flag
-    BEQ waitLoop
-    LDA #0
-    STA tick_flag
 
     JSR Copy2PixelStrip
 
