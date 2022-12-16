@@ -71,6 +71,7 @@ col_flash_white_black = 15
         .PrintBigCharPixelNotSet
             LDA CharPixelMask
             PHA
+            LDX ScreenCharX
             JSR DrawCustomInfillChar
             PLA
             STA CharPixelMask
@@ -349,6 +350,7 @@ RTS
 ;   (CharPtr): loc of char
 ;   x: x pos
 ;   y: y pos
+
 ;--------------------------------------------------
     ; Adjust for Y character offset
     TYA
@@ -386,7 +388,7 @@ RTS
         STA VideoMemValue
 
     .PrintCharDisplayColByte
-        CLC ; prolly not needed
+        CLC
         ROL CharPixelMask
 
         ; save Y to X

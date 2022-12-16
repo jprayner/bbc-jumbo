@@ -126,12 +126,16 @@ RTS
     STA &FE4D ; clear flag
 
     INC timer_count
-    LDA timer_count
-    CMP #3
-    BMI irq_handler_done
+    LDA #1
+    CMP timer_count
+    BPL irq_handler_done
 
+    ; set tick flag to 1 to indicate timer tick
     LDA #1
     STA tick_flag
+
+    ; reset timer
+    LDA #0
     STA timer_count
 
     .irq_handler_done
@@ -384,8 +388,10 @@ RTS
     CLI
     RTS
 
+.bigCharStripBuffer SKIP 256
+
 .message
-    EQUS "Jim rocks, Bartek sux! Hahahahaha!"
+    EQUS "Jim rocks, Bartek sux! Hahahahaha!!"
      
     EQUB 0
 
