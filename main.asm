@@ -36,7 +36,6 @@ GUARD &9F
   .Flags        SKIP 1
   .ScrollCount  SKIP 1
   .Copy2PixelStripCharColumn                SKIP 1
-  .Copy2PixelStrip2PixelSliceOffset         SKIP 1
   .timer_count   SKIP 1
   .tick_flag     SKIP 1
   .old_irqv     SKIP 2
@@ -178,7 +177,7 @@ RTS
     STA tick_flag
     .waitLoop
     LDA tick_flag
-    BEQ waitLoop
+    ;BEQ waitLoop
 
     .scrollLeft2Pixels
     CLC
@@ -225,10 +224,14 @@ RTS
     LDA #0
     STA crtc_val
 
-    ;LDA #crtc_reg_disp_rows
-    ;STA crtc_reg
-    ;LDA #08
-    ;STA crtc_val
+    LDX #20
+    LDY #0
+    JSR VidMemForXY
+    LDA VidMemPtr
+    STA DestPtr
+    LDA VidMemPtr + 1
+    STA DestPtr + 1
+
     RTS
 
 .scrollSingleCharDone
@@ -265,21 +268,11 @@ RTS
     TXA
     PHA
 
-    ; multiply lower 2 bits by 8 to get the offset in bytes: offset will be 0, 8, 16 or 24
-    .Calc2PixelSliceOffset
-    AND #%00000011
-    ASL A
-    ASL A
-    ASL A
-    STA Copy2PixelStrip2PixelSliceOffset
-
-    ; divide by 4 to get the column offset in char positions (there are 4x 2-pixel shifts per char)
-    .CalcCharColumnOffset
-    PLA
+    ; remember strip start address
+    LDA DestPtr
     PHA
-    LSR A
-    LSR A
-    STA Copy2PixelStripCharColumn
+    LDA DestPtr + 1
+    PHA
 
     ; start copying 8x rows of 2 pixels
     LDA #0
@@ -293,34 +286,6 @@ RTS
 
     .Copy2PixelStripLoop
 
-    ; Find destination address
-
-    ; Row is in Temp; column is 20 + char pos * 8 (19 being rightmost column before scroll)
-    LDA Temp
-    TAY
-    LDA MessageIdx
-    ASL A
-    ASL A
-    ASL A
-    CLC
-    ADC Copy2PixelStripCharColumn
-    ADC #20
-    TAX
-
-    JSR VidMemForXY
-    LDA VidMemPtr
-    STA DestPtr
-    LDA VidMemPtr + 1
-    STA DestPtr + 1
-
-    CLC
-    LDA DestPtr
-    ADC Copy2PixelStrip2PixelSliceOffset
-    STA DestPtr
-    BCC SkipMSBAdd2
-    INC DestPtr + 1
-    .SkipMSBAdd2
-
     .Copy8PixelRows
     LDY #7
     .CopyNextPixelRow
@@ -329,10 +294,18 @@ RTS
     DEY
     BPL CopyNextPixelRow
 
-    CLC
     LDA #8
+    CLC
     ADC SrcPtr
     STA SrcPtr
+
+    CLC
+    LDA #640 MOD 256
+    ADC DestPtr
+    STA DestPtr
+    LDA #640 DIV 256
+    ADC DestPtr + 1
+    STA DestPtr + 1
 
     INC Temp
     LDA Temp
@@ -342,6 +315,21 @@ RTS
     JMP Copy2PixelStripLoop
 
     .Copy2PixelStripDone
+
+    ; restore char start address
+    PLA
+    STA DestPtr + 1
+    PLA
+    STA DestPtr
+
+    ; Advance to next 2-pixel strip
+    CLC
+    ADC #8
+    STA DestPtr
+    BCC SkipMSBAdd2
+    INC DestPtr + 1
+    .SkipMSBAdd2
+
     PLA
     TAX
     RTS
@@ -377,8 +365,8 @@ ALIGN &100
 
 
 .message
-    EQUS "Once upon a time in a galaxy 1234567"
-     
+    EQUS "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed d"
+    ; do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
     EQUB 0
 
 INCLUDE "jumbo.asm"
