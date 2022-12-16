@@ -40,6 +40,7 @@ GUARD &9F
   .timer_count   SKIP 1
   .tick_flag     SKIP 1
   .old_irqv     SKIP 2
+  .offscreen_buffer_ptr SKIP 2
 
 ORG &2000         ; code origin (like P%=&2000)
 GUARD &3000
@@ -173,11 +174,11 @@ RTS
     LDY #24
     JSR PrintBigChar
 
+    LDA #0
+    STA tick_flag
     .waitLoop
     LDA tick_flag
     BEQ waitLoop
-    LDA #0
-    STA tick_flag
 
     .scrollLeft2Pixels
     CLC
@@ -284,34 +285,17 @@ RTS
     LDA #0
     STA Temp
 
-    .Copy2PixelStripLoop
-
-    ; Find source address
-
-    ; We're copying from row in Temp (+24 to find offscreen position where character has been drawn) and column derived from X on entry
-    LDA Temp
-    CLC
-    ADC #24
-    TAY
-    LDX Copy2PixelStripCharColumn
-    JSR VidMemForXY
-    LDA VidMemPtr
+    ; Source start address
+    LDA #offscreen_buffer MOD 256
     STA SrcPtr
-    LDA VidMemPtr + 1
+    LDA #offscreen_buffer DIV 256
     STA SrcPtr + 1
 
-    ; Add on the offset to the character address to get the start of the 2-pixel slice
-    CLC
-    LDA SrcPtr
-    ADC Copy2PixelStrip2PixelSliceOffset
-    STA SrcPtr
-    BCC SkipMSBAdd
-    INC SrcPtr + 1
-    .SkipMSBAdd
+    .Copy2PixelStripLoop
 
     ; Find destination address
 
-    ; Row is in Temp; column is 19 + char pos * 8 (19 being rightmost column before scroll)
+    ; Row is in Temp; column is 20 + char pos * 8 (19 being rightmost column before scroll)
     LDA Temp
     TAY
     LDA MessageIdx
@@ -322,11 +306,6 @@ RTS
     ADC Copy2PixelStripCharColumn
     ADC #20
     TAX
-
-    ;LDA ScrollCount
-    ;CLC
-    ;ADC #19
-    ;TAX
 
     JSR VidMemForXY
     LDA VidMemPtr
@@ -349,6 +328,11 @@ RTS
     STA (DestPtr), Y
     DEY
     BPL CopyNextPixelRow
+
+    CLC
+    LDA #8
+    ADC SrcPtr
+    STA SrcPtr
 
     INC Temp
     LDA Temp
@@ -388,10 +372,12 @@ RTS
     CLI
     RTS
 
-.bigCharStripBuffer SKIP 256
+ALIGN &100
+.offscreen_buffer SKIP 64
+
 
 .message
-    EQUS "Jim rocks, Bartek sux! Hahahahaha!!"
+    EQUS "Once upon a time in a galaxy 1234567"
      
     EQUB 0
 

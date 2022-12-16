@@ -23,11 +23,14 @@ col_flash_white_black = 15
 ;   Print given ASCII at 8x size i.e. 64x64 pixels
 ;   a: character to print
 ;   x: 2-char vertical strip index within enlarged char (range 0-31)
-;   y: Y character co-ord for top of character
 ;--------------------------------------------------
     STX ScreenCharX
-    STY CharOffsetY
     JSR CharSrcPtrForASCII
+
+    LDA #offscreen_buffer MOD 256
+    STA offscreen_buffer_ptr
+    LDA #offscreen_buffer DIV 256
+    STA offscreen_buffer_ptr + 1
 
     ; Save x to stack
     LDA ScreenCharX
@@ -93,7 +96,6 @@ RTS
 ;   Show a block of 8x8 pixels at specified location
 ;   x: X character co-ord
 ;   y: Y character co-ord
-;   CharOffsetY: Y character offset for top of character
 ;--------------------------------------------------
     PHA
     TXA
@@ -101,21 +103,18 @@ RTS
     TYA
     PHA
 
-    ; Adjust for Y character offset
-    TYA
-    CLC
-    ADC CharOffsetY
-    TAY
-
-    JSR VidMemForXY
-    
     LDY #0
     .block_loop
         LDA #col_red OR (col_red * 2)
-        STA (VidMemPtr), Y
+        STA (offscreen_buffer_ptr), Y
         INY
-        CPY #32
+        CPY #8
         BNE block_loop
+
+    LDA offscreen_buffer_ptr
+    CLC
+    ADC #8
+    STA offscreen_buffer_ptr
 
     PLA
     TAY
@@ -352,17 +351,9 @@ RTS
 ;   y: y pos
 
 ;--------------------------------------------------
-    ; Adjust for Y character offset
     TYA
-    CLC
-    ADC CharOffsetY
-    TAY
-
-    JSR VidMemForXY
 
     LDY #0              ; char row
-    LDA #128            ; set MSB - mask first column of char map
-    STA CharPixelMask
 
     .PrintCharPixA
         LDA #0
@@ -391,34 +382,19 @@ RTS
         CLC
         ROL CharPixelMask
 
-        ; save Y to X
-        TYA
-        TAX
-
-        LDY #0
         LDA VideoMemValue
-        STA (VidMemPtr), Y
-
-        INC VidMemPtr
-        ; TODO: sort VidMemPtr+1
-
-        ; restore Y
-        TXA
-        TAY
+        STA (offscreen_buffer_ptr), Y
 
         INY
         TYA
         AND #&08
         BEQ PrintCharPixA
 
-    .PrintCharNextCol
-        LDY #0 ; go back to top of char
-        CLC
-        ROR CharPixelMask ; now we're interested in next pair of pixels
-        CLC
-        ROR CharPixelMask
-        BCC PrintCharPixA
     .PrintCharDone
+    LDA offscreen_buffer_ptr
+    CLC
+    ADC #8
+    STA offscreen_buffer_ptr
 RTS
 
 ;--------------------------------------------------
@@ -522,9 +498,6 @@ RTS
     EQUB 0
 
 .VideoMemValue
-    EQUB 0
-
-.CharOffsetY
     EQUB 0
 
 .DebugCli
