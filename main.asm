@@ -190,10 +190,10 @@ RTS
     .waitLoop
     LDA tick_flag
     ;BEQ waitLoop
-    JSR delay
+    ;JSR delay
 
     LDA MessageIdx
-    CMP #62
+    CMP #77
     BMI scrollLeft2Pixels
 
 ;JSR delay
@@ -204,6 +204,15 @@ RTS
     INC ScrollPtr
     BNE scrollLeft2PixelsDone
     INC ScrollPtr + 1
+
+    ; check for scroll wrap
+    LDA ScrollPtr + 1
+    CMP #&10
+    BMI skipScrollAddressWrap
+    LDA #vid_mem DIV 2048
+    STA ScrollPtr + 1
+    .skipScrollAddressWrap
+
     .scrollLeft2PixelsDone
 
     LDA #crtc_reg_screen_start_l
@@ -356,8 +365,12 @@ RTS
 
     LDA DestPtr + 1
     CMP #&80
-    BMI SkipMSBAdd2
-    JSR initScroll
+    BMI skipAddressWrap2
+    LDA DestPtr + 1
+    SEC
+    SBC #&50
+    STA DestPtr + 1
+    .skipAddressWrap2
 
     .SkipMSBAdd2
 
@@ -367,7 +380,7 @@ RTS
 
 .delay
     PHA
-    LDA #$f0
+    LDA #$f4
     STA Temp  ; high byte
     .delayloop
     ADC #01
@@ -396,9 +409,9 @@ ALIGN &100
 
 
 .message
-    EQUS "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
+    EQUS "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
     ; do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
-; Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
+;Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempo
     EQUB 0
 
 INCLUDE "jumbo.asm"
