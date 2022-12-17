@@ -64,6 +64,8 @@ GUARD &3000
     LDA #22:JSR oswrch
     LDA #2:JSR oswrch
 
+JSR waitForKey
+
     JSR setupInterruptHandler
     ;JMP foreever
 
@@ -73,14 +75,26 @@ GUARD &3000
     LDA #message DIV 256
     STA MessagePtr + 1
 
+    LDA #0
+    STA MessageIdx
+    LDA #0
+    STA ScrollCount
+
     JSR initScroll
 
-    LDY #0
     .messageLoop
+    LDY #0
     LDA (MessagePtr), Y
     BEQ foreever
+
+    CLC
+    INC MessagePtr
+    BNE incMessagePtrDone
+    INC MessagePtr + 1
+    .incMessagePtrDone
+
     JSR scrollSingleChar
-;JSR waitForKey
+
     INY
     JMP messageLoop
 
@@ -168,9 +182,7 @@ RTS
 
     .shiftLoop
 
-    ; draw section of character starting from row 24
     LDA currentChar
-    LDY #24
     JSR PrintBigChar
 
     LDA #0
@@ -178,8 +190,16 @@ RTS
     .waitLoop
     LDA tick_flag
     ;BEQ waitLoop
+    JSR delay
+
+    LDA MessageIdx
+    CMP #62
+    BMI scrollLeft2Pixels
+
+;JSR delay
 
     .scrollLeft2Pixels
+    
     CLC
     INC ScrollPtr
     BNE scrollLeft2PixelsDone
@@ -209,10 +229,6 @@ RTS
     STA ScrollPtr
     LDA #vid_mem DIV 2048
     STA ScrollPtr + 1
-    LDA #0
-    STA MessageIdx
-    LDA #0
-    STA ScrollCount
 
     LDA #crtc_reg_screen_start_l
     STA crtc_reg
@@ -307,6 +323,15 @@ RTS
     ADC DestPtr + 1
     STA DestPtr + 1
 
+    CMP #&80
+    BMI skipAddressWrap
+
+    LDA DestPtr + 1
+    SEC
+    SBC #&50
+    STA DestPtr + 1
+    .skipAddressWrap
+
     INC Temp
     LDA Temp
     CMP #8
@@ -328,6 +353,12 @@ RTS
     STA DestPtr
     BCC SkipMSBAdd2
     INC DestPtr + 1
+
+    LDA DestPtr + 1
+    CMP #&80
+    BMI SkipMSBAdd2
+    JSR initScroll
+
     .SkipMSBAdd2
 
     PLA
@@ -336,7 +367,7 @@ RTS
 
 .delay
     PHA
-    LDA #$e0
+    LDA #$f0
     STA Temp  ; high byte
     .delayloop
     ADC #01
@@ -365,8 +396,9 @@ ALIGN &100
 
 
 .message
-    EQUS "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed d"
+    EQUS "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
     ; do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
+; Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
     EQUB 0
 
 INCLUDE "jumbo.asm"
