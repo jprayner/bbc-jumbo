@@ -1,5 +1,5 @@
-.antiAliasChars
-.antiAliasChar0    ; BL/BR/TR/TL == 0000
+.anti_alias_chars
+.anti_alias_char0    ; BL/BR/TR/TL == 0000
     EQUB %00000000
     EQUB %00000000
     EQUB %00000000
@@ -8,7 +8,7 @@
     EQUB %00000000
     EQUB %00000000
     EQUB %00000000
-.antiAliasChar1    ; BL/BR/TR/TL == 0001
+.anti_alias_char1    ; BL/BR/TR/TL == 0001
     EQUB %11000000
     EQUB %11000000
     EQUB %00000000
@@ -17,7 +17,7 @@
     EQUB %00000000
     EQUB %00000000
     EQUB %00000000
-.antiAliasChar2    ; BL/BR/TR/TL == 0010
+.anti_alias_char2    ; BL/BR/TR/TL == 0010
     EQUB %00000011
     EQUB %00000011
     EQUB %00000000
@@ -26,7 +26,7 @@
     EQUB %00000000
     EQUB %00000000
     EQUB %00000000
-.antiAliasChar3    ; BL/BR/TR/TL == 0011
+.anti_alias_char3    ; BL/BR/TR/TL == 0011
     EQUB %11000011
     EQUB %11000011
     EQUB %00000000
@@ -35,7 +35,7 @@
     EQUB %00000000
     EQUB %00000000
     EQUB %00000000
-.antiAliasChar4    ; BL/BR/TR/TL == 0100
+.anti_alias_char4    ; BL/BR/TR/TL == 0100
     EQUB %00000000
     EQUB %00000000
     EQUB %00000000
@@ -44,7 +44,7 @@
     EQUB %00000000
     EQUB %00000011
     EQUB %00000011
-.antiAliasChar5    ; BL/BR/TR/TL == 0101
+.anti_alias_char5    ; BL/BR/TR/TL == 0101
     EQUB %11000000
     EQUB %11000000
     EQUB %00000000
@@ -53,7 +53,7 @@
     EQUB %00000000
     EQUB %00000011
     EQUB %00000011
-.antiAliasChar6    ; BL/BR/TR/TL == 0110
+.anti_alias_char6    ; BL/BR/TR/TL == 0110
     EQUB %00000011
     EQUB %00000011
     EQUB %00000000
@@ -62,7 +62,7 @@
     EQUB %00000000
     EQUB %00000011
     EQUB %00000011
-.antiAliasChar7    ; BL/BR/TR/TL == 0111
+.anti_alias_char7    ; BL/BR/TR/TL == 0111
     EQUB %11000011
     EQUB %11000011
     EQUB %00000000
@@ -71,7 +71,7 @@
     EQUB %00000000
     EQUB %00000011
     EQUB %00000011
-.antiAliasChar8    ; BL/BR/TR/TL == 1000
+.anti_alias_char8    ; BL/BR/TR/TL == 1000
     EQUB %00000000
     EQUB %00000000
     EQUB %00000000
@@ -80,7 +80,7 @@
     EQUB %00000000
     EQUB %11000000
     EQUB %11000000
-.antiAliasChar9    ; BL/BR/TR/TL == 1001
+.anti_alias_char9    ; BL/BR/TR/TL == 1001
     EQUB %11000000
     EQUB %11000000
     EQUB %00000000
@@ -89,7 +89,7 @@
     EQUB %00000000
     EQUB %11000000
     EQUB %11000000
-.antiAliasChar10    ; BL/BR/TR/TL == 1010
+.anti_alias_char10    ; BL/BR/TR/TL == 1010
     EQUB %00000011
     EQUB %00000011
     EQUB %00000000
@@ -98,7 +98,7 @@
     EQUB %00000000
     EQUB %11000000
     EQUB %11000000
-.antiAliasChar11    ; BL/BR/TR/TL == 1011
+.anti_alias_char11    ; BL/BR/TR/TL == 1011
     EQUB %11000011
     EQUB %11000011
     EQUB %00000000
@@ -107,7 +107,7 @@
     EQUB %00000000
     EQUB %11000000
     EQUB %11000000
-.antiAliasChar12    ; BL/BR/TR/TL == 1100
+.anti_alias_char12    ; BL/BR/TR/TL == 1100
     EQUB %00000000
     EQUB %00000000
     EQUB %00000000
@@ -116,7 +116,7 @@
     EQUB %00000000
     EQUB %11000011
     EQUB %11000011
-.antiAliasChar13    ; BL/BR/TR/TL == 1101
+.anti_alias_char13    ; BL/BR/TR/TL == 1101
     EQUB %11000000
     EQUB %11000000
     EQUB %00000000
@@ -125,7 +125,7 @@
     EQUB %00000000
     EQUB %11000011
     EQUB %11000011
-.antiAliasChar14    ; BL/BR/TR/TL == 1110
+.anti_alias_char14    ; BL/BR/TR/TL == 1110
     EQUB %00000011
     EQUB %00000011
     EQUB %00000000
@@ -134,7 +134,7 @@
     EQUB %00000000
     EQUB %11000011
     EQUB %11000011
-.antiAliasChar15    ; BL/BR/TR/TL == 1111
+.anti_alias_char15    ; BL/BR/TR/TL == 1111
     EQUB %11000011
     EQUB %11000011
     EQUB %00000000
@@ -144,7 +144,7 @@
     EQUB %11000011
     EQUB %11000011
 ; 640 multiplication table (LSB, MSB)
-.Table640
+.table_640
    EQUW &0000 ; 0 * 640
    EQUW &8002 ; 1 * 640
    EQUW &0005 ; 2 * 640

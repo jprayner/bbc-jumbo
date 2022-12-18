@@ -12,11 +12,11 @@ const corners = [
 genTable();
 
 function genTable() {
-    console.log(".antiAliasChars");
+    console.log(".anti_alias_chars");
     for (let i = 0; i < 16; i++) {
         let flags = i.toString(2);
         flags = "0000".substr(flags.length) + flags;
-        console.log(`.antiAliasChar${i}    ; BL/BR/TR/TL == ${flags}`);
+        console.log(`.anti_alias_char${i}    ; BL/BR/TR/TL == ${flags}`);
 
         const bottomLeft = i & 8;
         const bottomRight = i & 4;
@@ -54,7 +54,7 @@ function genTable() {
     }
 
     console.log(`; 640 multiplication table (LSB, MSB)`);
-    console.log(`.Table640`);
+    console.log(`.table_640`);
     for (let i = 0; i < 32; i++) {
         let val = i * 640;
 
