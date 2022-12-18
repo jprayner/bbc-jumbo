@@ -46,7 +46,7 @@
     STA tick_flag
     .wait_loop
     LDA tick_flag
-    ; BEQ wait_loop
+    BEQ wait_loop
 
     .scroll_left_2px
     CLC

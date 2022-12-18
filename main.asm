@@ -49,6 +49,14 @@ GUARD &3000
     LDA #22 : JSR OSWRCH
     LDA #2  : JSR OSWRCH
 
+    ; Configure CRTC to show 8 rows
+    LDA #CRTC_REG_DISP_ROWS : STA CRTC_REG
+    LDA #8                  : STA CRTC_VAL
+
+    ; Configure CRTC to show 8 rows
+    LDA #7 : STA CRTC_REG
+    LDA #24                  : STA CRTC_VAL
+
     JSR setup_interrupt_handler
 
     .restart
@@ -96,7 +104,7 @@ INCLUDE "util.asm"
 INCLUDE "tables.asm"
 
 .message
-    EQUS "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?"
+    EQUS "Hello there.   "
     EQUB 0
 .end
 
