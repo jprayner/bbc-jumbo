@@ -139,18 +139,18 @@ RTS
 
     STA &FE4D ; clear flag
 
-    INC timer_count
-    LDA #1
-    CMP timer_count
-    BPL irq_handler_done
+    ;INC timer_count
+    ;LDA #1
+    ;CMP timer_count
+    ;BPL irq_handler_done
 
     ; set tick flag to 1 to indicate timer tick
     LDA #1
     STA tick_flag
 
     ; reset timer
-    LDA #0
-    STA timer_count
+    ;LDA #0
+    ;STA timer_count
 
     .irq_handler_done
 
@@ -189,7 +189,8 @@ RTS
     STA tick_flag
     .waitLoop
     LDA tick_flag
-    ;BEQ waitLoop
+    BEQ waitLoop
+    
     ;JSR delay
 
     LDA MessageIdx
@@ -410,8 +411,6 @@ ALIGN &100
 
 .message
     EQUS "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
-    ; do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
-;Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempo
     EQUB 0
 
 INCLUDE "jumbo.asm"

@@ -36,7 +36,15 @@ col_flash_white_black = 15
     LDA ScreenCharX
     PHA
 
-    ; Divide x by 4 to get range 0-7
+    ; We get called 4 times for each character to draw a 2-pixel slice
+    ; each time. CharPixelX tells us start pixel X pos within the character
+    ; for each slice (0, 2, 4, 6)
+    AND #%00000011
+    STA CharPixelX
+    CLC
+    ROL CharPixelX
+
+    ; Divide x by 4 to get on-screen character in range 0-7
     CLC
     ROR ScreenCharX
     CLC
@@ -133,8 +141,6 @@ RTS
 ;
 ;   x: Char pixel col # (0=leftmost, 7=rightmost)
 ;   y: Char pixel row # (0=leftmost, 7=rightmost)
-;   ScreenCharX: X pos on screen
-;   ScreenCharY: Y pos on screen
 ;   CharPtr: start location of character being drawn
 ;   CharPixelMask: 8-bit mask with only x pos bit set
 ;   on exit, CustomChar populated with infill mask; a contains flags
@@ -264,8 +270,6 @@ RTS
     TYA
     PHA
 
-    LDX ScreenCharX
-    LDY ScreenCharY
     LDA Flags
 
     JSR DrawAntiAliasCorners
@@ -287,8 +291,6 @@ RTS
 ;             ^---- top-right
 ;            ^----- bottom-right
 ;           ^------ bottom-left
-; x: X character co-ord
-; y: Y character co-ord
 ;--------------------------------------------------
     STA DrawAntiAliasCornersFlags
 
@@ -300,6 +302,10 @@ RTS
     PHA
 
     LDA DrawAntiAliasCornersFlags
+    BEQ noCorners
+    NOP
+    .noCorners
+
     CLC
     ROL A                        ; x8
     ROL A
@@ -310,7 +316,7 @@ RTS
     ADC #antiAliasChars DIV 256
     STA CharPtr+1
 
-    LDA (CharPtr), Y
+
     JSR PrintChar
 
     PLA                         ; restore CharPtr
@@ -347,20 +353,31 @@ RTS
 .PrintChar
 ;   Copies an 8x8 character from the given source address to the screen at the given position.
 ;   (CharPtr): loc of char
-;   x: x pos
-;   y: y pos
-
+;   CharPixelX: start X pos of 2-pixel strip within character (0, 2, 4, 6)
 ;--------------------------------------------------
     TYA
+    PHA
 
-    LDY #0              ; char row
+    ; Mask for pixel in X pos of source character
+    LDY CharPixelX
+    LDA #128
+    .setPrintMaskLoop
+    DEY
+    BMI setPrintMaskDone
+    CLC
+    ROR A
+    JMP setPrintMaskLoop
+    .setPrintMaskDone
+    STA PrintMask
+
+    LDY #0
 
     .PrintCharPixA
         LDA #0
         STA VideoMemValue
 
         LDA (CharPtr), Y
-        AND CharPixelMask
+        AND PrintMask
         BEQ PrintCharPixB
 
         LDA #col_red
@@ -368,10 +385,10 @@ RTS
 
     .PrintCharPixB
         CLC
-        ROR CharPixelMask
+        ROR PrintMask
 
         LDA (CharPtr), Y
-        AND CharPixelMask
+        AND PrintMask
         BEQ PrintCharDisplayColByte
 
         LDA #(col_red * 2)
@@ -380,7 +397,7 @@ RTS
 
     .PrintCharDisplayColByte
         CLC
-        ROL CharPixelMask
+        ROL PrintMask ; restore to original value
 
         LDA VideoMemValue
         STA (offscreen_buffer_ptr), Y
@@ -395,6 +412,9 @@ RTS
     CLC
     ADC #8
     STA offscreen_buffer_ptr
+
+    PLA
+    TAY
 RTS
 
 ;--------------------------------------------------
@@ -491,7 +511,8 @@ RTS
     EQUB 0
 .CharPixelMask
     EQUB 0
-
+.PrintMask
+    EQUB 0
 .ScreenCharX
     EQUB 0
 .ScreenCharY
