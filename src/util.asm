@@ -1,7 +1,7 @@
 .delay
 {
     PHA
-    LDA #$f4
+    LDA #$00
     STA temp  ; high byte
     .delay_loop
     ADC #01

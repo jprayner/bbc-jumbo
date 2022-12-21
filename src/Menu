@@ -1,0 +1,36 @@
+1 LAUNCH=&2000:RUNMODE=&2700:MSGBUF=&2701:POKEAPP=&24D2
+2 *LOAD "Code"
+3 *NET
+8 REPEAT
+9 MODE 7
+10 PRINT "Jumbo text scroller"
+20 PRINT "==================="
+30 PRINT "Choose run mode:"
+40 PRINT "1. Standalone"
+50 PRINT "2. Econet"
+70 LET M = GET
+80 IF M = 49 THEN PROCstandalone
+90 IF M = 50 THEN PROCleader
+100 IF M = 51 THEN PROCfollower
+110 UNTIL FALSE
+120 DEF PROCstandalone
+130 INPUT LINE "Message to scroll ", MSG$
+140 ?RUNMODE=1
+150 $MSGBUF=MSG$
+160 CALL LAUNCH
+170 ENDPROC
+180 DEF PROCleader
+190 INPUT LINE "Message to scroll ", MSG$
+195 ?RUNMODE=2
+200 $MSGBUF=MSG$
+205 PRINT "Please enter econet station numbers in right->left order (not including this one)."
+210 INPUT "Follower station number ", A%
+220 U% = USR POKEAPP
+230 PRINT U%
+240 INPUT "WAITING ", G%
+360 CALL LAUNCH
+490 ENDPROC
+500 DEF PROCfollower
+510 ?&2601=2
+520 CALL &2000, MSG$
+530 ENDPROC

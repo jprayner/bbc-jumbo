@@ -18,6 +18,10 @@ CRTC_REG_SCREEN_START_L = &0D
 VIA_INT_EN = &FE4E
 VIA_INT_FLAG = &FE4D
 
+RUN_MODE_STANDALONE = &01
+RUN_MODE_ECONET_LEADER = &02
+RUN_MODE_ECONET_FOLLOWER = &03
+
 ORG &70
 GUARD &9F
   .vid_mem_ptr          SKIP 2
@@ -36,9 +40,32 @@ GUARD &9F
   .offscreen_buff_ptr   SKIP 2
 
 ORG &2000
-GUARD &3000
+GUARD &26FF
 
 .start
+{
+    LDA run_mode
+    CMP #RUN_MODE_STANDALONE
+    BEQ start_scrolling
+    CMP #RUN_MODE_ECONET_LEADER
+    BEQ start_leader
+    CMP #RUN_MODE_ECONET_FOLLOWER
+    BEQ start_follower
+}
+
+.start_leader
+{
+    JSR broadcast_start
+    JMP start_scrolling
+}
+
+.start_follower
+{
+    JSR wait_broadcast_start
+    JMP start_scrolling
+}
+
+.start_scrolling
 {
     SEI
         LDA #%01111111   ; disable all System VIA interrupts
@@ -71,6 +98,7 @@ GUARD &3000
     .message_loop
     LDY #0
     LDA (message_ptr), Y
+    CMP #&0d
     BEQ done
 
     CLC
@@ -101,12 +129,20 @@ INCLUDE "interrupt.asm"
 INCLUDE "scroll.asm"
 INCLUDE "render.asm"
 INCLUDE "util.asm"
+INCLUDE "econet.asm"
 INCLUDE "tables.asm"
 
+ORG &2700
+.run_mode           SKIP 1
 .message
-    EQUS "Hello there.   "
-    EQUB 0
+    EQUS "Message goes here."
+    EQUB &0d
+
+; leave enough room for a message
+ORG &27FF
+EQUB 0
 .end
 
 SAVE "Code", start, end
-PUTBASIC "DEBUG"
+PUTBASIC "MENU"
+PUTFILE "BOOT", "!BOOT", &FFFF
