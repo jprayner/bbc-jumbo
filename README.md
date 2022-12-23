@@ -2,15 +2,13 @@
 
 ## Description
 
-This is a silly little app for the BBC Micro which smoothly scrolls large, (kinda!) anti-aliased text across the screen.
-
-If you've got an Econet then it can scroll the message across multiple screens.
+This is a silly little app for the BBC Micro which smoothly scrolls large, (kinda!) anti-aliased text across the screen at 50fps. If you've got an Econet then it can scroll the message across multiple screens.
 
 The app is mostly implemented in 6502 assembly language with a menu system written in BBC BASIC.
 
 ## Demo
 
-{% include youtube.html id="e47kdo0Q8_Y" %}
+https://user-images.githubusercontent.com/909745/209393540-59f1d2c6-4a34-4aca-b0af-24944fc6b147.mp4
 
 Credit: music by [Music Unlimited](https://pixabay.com/users/music_unlimited-27600023/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=music&amp;utm_content=124008) from
 [Pixabay](https://pixabay.com//?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=music&amp;utm_content=124008)
@@ -18,7 +16,6 @@ Credit: music by [Music Unlimited](https://pixabay.com/users/music_unlimited-276
 ## Building
 
 Ensure that you have [BeebAsm](https://github.com/stardot/beebasm) in your PATH and execute `run.sh` to generate `src/jumbo.ssd` disk image which you can load onto your Beeb using your storage solution of choice.
-
 
 ## Running
 
@@ -31,3 +28,37 @@ CHAIN "MENU"
 Choose the standalone option if you're running on a single machine, supply a message and away you go.
 
 If you're lucky enough to have a functioning Econet then selecting this option prompts you to enter the station numbers. The server is assumed to be the rightmost machine and you should enter the Econet station numbers of the other machines from left-to-right.
+
+## How does it work?
+
+### Embiggening
+
+The drawing of the text is handled by `render.asm`.
+
+First, `get_char_ptr_for_ascii` is used to look up the character to be drawn in the OS. This is represented as 8 bytes, one for each row; each bit within a row byte represents a pixel within that row. A filled-in pixel is a `1` and a "hole" is a `0`. Then 8 pixels are plotted on-screen for each filled-in pixel in the source character, turning the characters into 64x64 pixels:
+
+<img width="298" alt="Screenshot 2022-12-23 at 19 08 27" src="https://user-images.githubusercontent.com/909745/209396094-eff06f03-b70b-4516-afd0-6414f114aa2d.png">
+
+Hmmm... a bit lumpy. To improve matters, some extra processing is done (in `print_custom_infill_char`) when a hole pixel is found in the source character: the pixels immediately around it at each of the four compass points are evaluated. Where two lines appear to be intersecting, a little infill lump is drawn. Consider where the two lines of a letter 'L' meet: just inside there, the pixel to the left and the one below will be `1` and so we will draw an infill to the bottom-left. `print_anti_alias_corners` takes the infill flags built up by `print_custom_infill_char` and uses them to look up a custom character in `tables.asm`:
+
+```
+.anti_alias_char8    ; BL/BR/TR/TL == 1000
+    EQUB %00000000
+    EQUB %00000000
+    EQUB %00000000
+    EQUB %00000000
+    EQUB %00000000
+    EQUB %00000000
+    EQUB %11000000
+    EQUB %11000000
+```
+
+Our 64x64 characters now look like this:
+
+<img width="297" alt="Screenshot 2022-12-23 at 19 06 51" src="https://user-images.githubusercontent.com/909745/209401056-aeeac682-ecd7-4211-95ac-abe92d2bc31f.png">
+
+### Scrolling
+
+This app runs in screen mode 2 which is 160x256 pixels (20x32 characters). Each byte in screen memory describes two pixels (with the four bits per pixel giving a palette of 8 colours). By adding one to the start address of screen memory in the CRTC, the whole screen appears to move left by 2 pixels instantly, without needing to do any memory copying. This is great because the Beeb doesn't have any blitting capability. So all we need to do is fill in the 2 pixels just revealed by the scroll. The challenge is to do this quickly enough to fit within the vertical blanking interval in order to have a nice, smooth animation and to avoid "tearing" artefacts.
+
+See this excellent video by Kieran Connell on programming the CRTC, including how to do scrolling: https://www.youtube.com/watch?v=dbGRFUNARjw 
