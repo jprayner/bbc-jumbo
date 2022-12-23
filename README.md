@@ -10,10 +10,7 @@ The app is mostly implemented in 6502 assembly language with a menu system writt
 
 ## Demo
 
-[![Econet Jumbo Text Scroller demo]
-(https://img.youtube.com/vi/e47kdo0Q8_Y/hqdefault.jpg)]
-(https://youtu.be/e47kdo0Q8_Y)
-
+{% include youtube.html id="e47kdo0Q8_Y" %}
 
 Credit: music by [Music Unlimited](https://pixabay.com/users/music_unlimited-27600023/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=music&amp;utm_content=124008) from
 [Pixabay](https://pixabay.com//?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=music&amp;utm_content=124008)
