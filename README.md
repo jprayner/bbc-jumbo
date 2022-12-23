@@ -63,7 +63,7 @@ This app runs in screen mode 2 which is 160x256 pixels (20x32 characters). Each 
 
 See this excellent video by Kieran Connell on programming the CRTC, including how to do scrolling: https://www.youtube.com/watch?v=dbGRFUNARjw 
 
-So all we need to do is fill in the 2 pixels just revealed by the scroll. The challenge is to do this quickly enough to fit within the vertical blanking interval in order to have a nice, smooth animation and to avoid "tearing" artefacts. `render.asm` is therefore optimised to only draw a vertical slice of the character being scrolled in and `scroll.asm` copies this in from the offscreen buffer to the screen. This has the additional advantage of keeping the offscreen buffer small.
+So all we need to do is fill in the 2 pixels just revealed by the scroll. The challenge is to do this quickly enough to fit within the vertical blanking interval in order to have a nice, smooth animation and to avoid "tearing" artefacts. `render.asm` is therefore optimised to only draw a vertical slice of the character being scrolled in and `scroll.asm` copies this in from the offscreen buffer to the screen. This has the additional advantage of keeping the offscreen buffer small (64 bytes).
 
 Two separate pointers `scroll_ptr` and `dest_ptr` are maintained to keep track of the current scroll position (start of video memory) and where we're writing to (just to the right of the screen). When these advance past the end of video memory, they wrap back to the start. Thus scrolling can continue indefinitely, although the current BASIC launcher currently imposes a limit of 254 chars to the size of the message.
 
