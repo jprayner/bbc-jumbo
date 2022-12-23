@@ -42,6 +42,15 @@ GUARD &9F
 ORG &2000
 GUARD &26FF
 
+;------------------------------------------------------------------------------
+; Entrypoint to application.
+;
+;   run_mode:           Determines if we are standalone, leader or follower
+;   num_screens_delay:  How long to wait before starting to scroll: first
+;                       follower delayed by 1 screen, second by 2 etc. Set to
+;                       0 for standalone or leader. 
+;   message:            Message to scroll, terminated by &0d.
+;------------------------------------------------------------------------------
 .start
 {
     LDA run_mode
@@ -53,18 +62,34 @@ GUARD &26FF
     BEQ start_follower
 }
 
+;------------------------------------------------------------------------------
+; Leader sends a broadcast to all stations on the network to start scrolling
+; before starting itself.
+;------------------------------------------------------------------------------
 .start_leader
 {
     JSR broadcast_start
-    JSR start_scrolling
+    JMP start_scrolling
 }
 
+;------------------------------------------------------------------------------
+; Follower waits for leader's broadcast before start to scroll.
+;------------------------------------------------------------------------------
 .start_follower
 {
     JSR wait_broadcast_start
     JMP start_scrolling
 }
 
+;------------------------------------------------------------------------------
+; Main scrolling loop.
+;
+;   run_mode:           Determines if we are standalone, leader or follower
+;   num_screens_delay:  How long to wait before starting to scroll: first
+;                       follower delayed by 1 screen, second by 2 etc. Set to
+;                       0 for standalone or leader. 
+;   message:            Message to scroll, terminated by &0d.
+;------------------------------------------------------------------------------
 .start_scrolling
 {
     SEI
@@ -120,8 +145,9 @@ GUARD &26FF
 }
 
 ALIGN &100
-; stores 2-pixel (1 byte) strip of 64 pixels height prior to copying to screen
+; Stores 2-pixel (1 byte) strip of 64 pixels height prior to copying to screen
 .offscreen_buffer       SKIP 64
+; ASCII value of current character to be enlarged and drawn on screen
 .current_char           SKIP 1
 
 INCLUDE "interrupt.asm"
@@ -131,18 +157,25 @@ INCLUDE "util.asm"
 INCLUDE "econet.asm"
 INCLUDE "tables.asm"
 
-; Args are passed in here
+;------------------------------------------------------------------------------
+; Arguments follow. Remember to update first line of Menu BASIC programme if
+; these addresses change.
+;------------------------------------------------------------------------------
 ORG &2700
+; Manner in which app is being launched: RUN_MODE_STANDALONE,
+; RUN_MODE_ECONET_LEADER or RUN_MODE_ECONET_FOLLOWER
 .run_mode
     EQUB RUN_MODE_STANDALONE
-; standalone or leader start immediately (0), next station is delayed by 1 screen etc.
+; How long to wait before starting to scroll: first follower delayed by 1
+; screen, second by 2 etc. Set to 0 for standalone or leader. 
 .num_screens_delay
     EQUB 0
+; Message to scroll, terminated by &0d.
 .message
     EQUS "Message goes here."
     EQUB &0d
-
-; leave enough room for a message
+; Leave enough room for a message so that it is included when POKEd to another
+; machine
 ORG &27FF
 EQUB 0
 .end

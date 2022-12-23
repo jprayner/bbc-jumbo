@@ -1,4 +1,16 @@
-; a = station
+;------------------------------------------------------------------------------
+; Called by BASIC launcher Menu to start the application on a remote machine.
+; This is done by performing two immediate (non-cooperative) operations: a POKE
+; to load the app into memory — including its start args and message to be
+; displayed — followed by a JSR to start it. Prior to calling.
+;
+;   A:                  Econet station number
+;   run_mode:           Should be set to RUN_MODE_ECONET_FOLLOWER
+;   num_screens_delay:  How long this station is to wait before starting to
+;                       scroll: first follower delayed by 1 screen, second by 2
+;                       etc.
+;   message:            Message to scroll, terminated by &0d.
+;------------------------------------------------------------------------------
 .launch_app_remote
 {
   STA jsr_control_block_station
@@ -17,7 +29,11 @@
   RTS
 }
 
-; a = station
+;------------------------------------------------------------------------------
+; POKES the app into memory on the remote machine (from start to end),
+; including its start args.
+;   A:                  Econet station number
+;------------------------------------------------------------------------------
 .poke_app
 {
   PHA
@@ -74,6 +90,10 @@
   RTS
 }
 
+;------------------------------------------------------------------------------
+; Sends an Econet broadcast packet from the leader to kick off scrolling on all
+; followers at the same time.
+;------------------------------------------------------------------------------
 .broadcast_start
 {
   LDA #10
@@ -118,6 +138,10 @@
   RTS
 }
 
+;------------------------------------------------------------------------------
+; Waits for an Econet broadcast packet from the leader before starting scroll
+; on a follower.
+;------------------------------------------------------------------------------
 .wait_broadcast_start
 {
   ; read JSR args and clear protection bits

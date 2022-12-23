@@ -10,12 +10,15 @@ col_white = 7
 .block_x_offset
     EQUW 0
 
-;--------------------------------------------------
+;------------------------------------------------------------------------------
 .print_2px_char_slice
-;   Print given ASCII at 8x size i.e. 64x64 pixels
-;   a: character to print
-;   x: 2-char vertical strip index within enlarged char (range 0-31)
-;--------------------------------------------------
+;   Print a vertical, 2-pixel slice of the given ASCII at 8x size i.e. 2x64
+;   pixels into the offscreen buffer, ready for it to be copied on-screen by
+;   scroll.asm.
+;
+;   A: ASCII character to print
+;   X: Which slice of enlarged character to draw (range 0-31)
+;------------------------------------------------------------------------------
     STX screen_char_x
     JSR get_char_ptr_for_ascii
 
@@ -28,15 +31,15 @@ col_white = 7
     LDA screen_char_x
     PHA
 
-    ; We get called 4 times for each character to draw a 2-pixel slice
-    ; each time. char_pixel_x tells us start pixel X pos within the character
+    ; We get called 4 times for the same pixel within the source character.
+    ; char_pixel_x tells us start pixel X pos within the enlarged character
     ; for each slice (0, 2, 4, 6)
     AND #%00000011
     STA char_pixel_x
     CLC
     ROL char_pixel_x
 
-    ; Divide x by 4 to get on-screen character in range 0-7
+    ; Divide x by 4 to get on-screen character x pos in range 0-7
     CLC
     ROR screen_char_x
     CLC
@@ -91,12 +94,10 @@ col_white = 7
     TAX
 RTS
 
-;--------------------------------------------------
+;------------------------------------------------------------------------------
 .print_block
-;   Show a block of 8x8 pixels at specified location
-;   x: X character co-ord
-;   y: Y character co-ord
-;--------------------------------------------------
+;   Copy a solid block of 2x8 pixels to the offscreen buffer.
+;------------------------------------------------------------------------------
     PHA
     TXA
     PHA
@@ -125,18 +126,20 @@ RTS
     RTS
 
 
-;--------------------------------------------------
+;------------------------------------------------------------------------------
 .print_custom_infill_char
-;   Fills in corners next to edges of surrounding blocks, giving an anti-aliased effect.
-;   This is done by inspecting the surrounding pixels of the source character and selecting
-;   an 8x8 character from the anti_alias_chars table to match.
+;   Fills in corners next to edges of surrounding blocks, giving an anti-
+;   aliased effect. This is done by inspecting the surrounding pixels of the
+;   source character and selecting an 8x8 character from the anti_alias_chars
+;   table to match.
 ;
-;   x: Char pixel col # (0=leftmost, 7=rightmost)
-;   y: Char pixel row # (0=leftmost, 7=rightmost)
-;   char_ptr: start location of character being drawn
-;   char_pixel_mask: 8-bit mask with only x pos bit set
-;   on exit, custom_char populated with infill mask; a contains flags
-;--------------------------------------------------
+;   X:                  Char pixel col # (0=leftmost, 7=rightmost)
+;   Y:                  Char pixel row # (0=leftmost, 7=rightmost)
+;   char_ptr:           Start location of character being drawn
+;   char_pixel_mask:    8-bit mask with only x pos bit set
+;
+;   On exit, custom_char populated with infill mask; A contains flags
+;------------------------------------------------------------------------------
     PHA
     LDA #0
     STA temp                        ; init mask to store a bit for pixel above, right, left and below
@@ -274,11 +277,12 @@ RTS
 
     RTS
 
-;--------------------------------------------------
+;------------------------------------------------------------------------------
 .print_anti_alias_corners
-;   Draws anti-aliased corners at the specified character position. The
-;   accumulator contains flags for which corners to draw.
-;   a:  xxxx0000
+;   Draws anti-aliased corners to the offscreen buffer. The accumulator
+;   contains flags for which corners to draw.
+;
+;   A:  xxxx0000
 ;              ^--- top-left
 ;             ^---- top-right
 ;            ^----- bottom-right
@@ -316,13 +320,12 @@ RTS
 
     RTS
 
-;--------------------------------------------------
+;------------------------------------------------------------------------------
 .get_char_ptr_for_ascii
-;   Given ASCII character, get ptr to char in
-;   character set (8 rows x 8 bits) and store in 
-;   char_ptr
-;   a: character to print
-;--------------------------------------------------
+;   Populate char_ptr with pointer to ASCII character specified in accumulator.
+;
+;   A:  Character to retrieve
+;------------------------------------------------------------------------------
     STA osword_0a
 
     LDA #&0A
@@ -337,12 +340,14 @@ RTS
 
     RTS
 
-;--------------------------------------------------
+;------------------------------------------------------------------------------
 .print_char
-;   Copies an 8x8 character from the given source address to the screen at the given position.
-;   (char_ptr): loc of char
-;   char_pixel_x: start X pos of 2-pixel strip within character (0, 2, 4, 6)
-;--------------------------------------------------
+;   Renders a 2x8 strip of the given source character to the offscreen buffer.
+;
+;   char_ptr:       loc of char to render
+;   char_pixel_x:   start bit position of strip to render within source char
+;                   (0, 2, 4, 6)
+;------------------------------------------------------------------------------
     TYA
     PHA
 
@@ -405,18 +410,19 @@ RTS
     TAY
 RTS
 
-;--------------------------------------------------
+;------------------------------------------------------------------------------
 .vid_mem_for_xy
-; Put start loc for character pos into vid_mem_ptr
-; x: X character co-ord
-; y: Y character co-ord
-;--------------------------------------------------
+; Put start loc for on-screen character pos into vid_mem_ptr
+;
+;   X: X character co-ord
+;   Y: Y character co-ord
+;------------------------------------------------------------------------------
 {
     PHA
 
     ; memory loc = VID_MEM_START + (Y * 640) + (X * 32)
 
-    ; Y * 640 - use lookup, see http://mdfs.net/Docs/Comp/BBC/OS1-20/C300
+    ; Y * 640 - use lookup
     TYA
     ROL A ; x2 to get word offset from start of lookup table (table contains
           ; 16-bit locations

@@ -1,4 +1,7 @@
-
+;------------------------------------------------------------------------------
+; Sets up scroll pointer to point to start of video memory and destination
+; pointer to just to right of visible screen.
+;------------------------------------------------------------------------------
 .init_scroll
 {
     ; note CRTC start address is regular addr. / 8 (hence MOD/DIV 2048)
@@ -21,6 +24,13 @@
     RTS
 }
 
+;------------------------------------------------------------------------------
+; Waits an appropriate number of frames before beginning to scroll, so that
+; text appears to flow from one screen to the next.
+;
+;   num_screens_delay:  Number of screens-worth of scrolling to wait before
+;                       returning.
+;------------------------------------------------------------------------------
 .delay_scroll_start
 {
     LDX num_screens_delay
@@ -42,8 +52,10 @@
     RTS
 }
 
-; a: char to scroll
-; x: char index
+;------------------------------------------------------------------------------
+; Scrolls a single, 64-pixel width character onto the screen.
+;   A: ASCII character to show
+;------------------------------------------------------------------------------
 .scroll_single_char
 {
     STA current_char
@@ -92,7 +104,7 @@
 
     JSR copy_2px_strip
 
-    ; a single char is 64 pixels wide, so we need to copy 32x 2-pixel strips
+    ; a single char is 64 pixels wide so we need to copy 32x 2-pixel strips
     INX
     CPX #32
     BEQ done
@@ -119,6 +131,15 @@
     RTS
 }
 
+;------------------------------------------------------------------------------
+; Copies a 2x64-pixel slice of the current character from the offscreen buffer
+; to the screen.
+;
+;   dest_ptr:   Current on-screen destination address (just to the right of
+;               visible)
+;   A: ASCII character to show
+;------------------------------------------------------------------------------
+
 ; x: 2-pixel vertical strip index within character (in range 0-31, given we have 64-pixel wide characters)
 .copy_2px_strip
 {
@@ -134,8 +155,6 @@
     ; start copying 8x rows of 2 pixels
     LDA #0
     STA temp
-
-    ; Source start address
     LDA #offscreen_buffer MOD 256
     STA src_ptr
     LDA #offscreen_buffer DIV 256
@@ -149,11 +168,13 @@
     DEY
     BPL copy_next_pixel_row
 
+    ; next row of offscreen buffer starts 8 bytes from previous row
     LDA #8
     CLC
     ADC src_ptr
     STA src_ptr
 
+    ; next row of screen starts 640 bytes from previous row
     CLC
     LDA #640 MOD 256
     ADC dest_ptr
@@ -162,8 +183,10 @@
     ADC dest_ptr + 1
     STA dest_ptr + 1
 
+    ; if we've reached the end of screen memory, wrap back to start
     JSR handle_address_wrap
 
+    ; done 8 on-screen rows (64 pixels) yet?
     INC temp
     LDA temp
     CMP #8
@@ -173,13 +196,13 @@
 
     .copy_2px_stripDone
 
-    ; restore char start address
+    ; restore screen memory pointer
     PLA
     STA dest_ptr + 1
     PLA
     STA dest_ptr
 
-    ; Advance to next 2-pixel strip
+    ; advance to next 2-pixel strip in screen memory pointer
     CLC
     ADC #8
     STA dest_ptr
@@ -192,6 +215,11 @@
     TAX
     RTS
 }
+
+;------------------------------------------------------------------------------
+; If screen memory point goes past end of screen (&7fff), wrap back to start 
+; (&3000) by subtracting &5000.
+;------------------------------------------------------------------------------
 
 .handle_address_wrap
 {

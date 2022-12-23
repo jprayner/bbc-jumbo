@@ -1,3 +1,7 @@
+;------------------------------------------------------------------------------
+; Stores current VIA interrupt handler so that it can be restored later and
+; replaces it with our own.
+;------------------------------------------------------------------------------
 .setup_interrupt_handler
 {
     SEI
@@ -22,6 +26,9 @@
     RTS    
 }
 
+;------------------------------------------------------------------------------
+; Restores original VIA interrupt handler, replaced by setup_interrupt_handler.
+;------------------------------------------------------------------------------
 .restore_interrupt_handler
 {
     SEI
@@ -33,16 +40,19 @@
     RTS
 }
 
+;------------------------------------------------------------------------------
+; On VSYNC interrupt, sets tick_flag to 1.
+;------------------------------------------------------------------------------
 .irq_handler
 {
     LDA &FC
     PHA
 
-    LDA VIA_INT_FLAG ; System VIA interrupt flag register
+    LDA VIA_INT_FLAG
     AND #%00000010 ; vsync interrupt flag
     BEQ irq_handler_done
 
-    STA VIA_INT_FLAG ; clear flag
+    STA VIA_INT_FLAG ; clear interrupt flag
 
     ; set tick flag to 1 to vert refresh
     LDA #1
@@ -55,6 +65,10 @@
     RTI
 }
 
+;------------------------------------------------------------------------------
+; Waits for VSYNC interrupt by setting tick_flag to 0 and then polling for
+; irq_handler to set it to 1.
+;------------------------------------------------------------------------------
 .wait_vsync
 {
     LDA #0

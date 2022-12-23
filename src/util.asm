@@ -1,3 +1,7 @@
+;------------------------------------------------------------------------------
+; Implements a short delay, useful for Econet retries or slowing things down
+; during debugging.
+;------------------------------------------------------------------------------
 .delay
 {
     PHA
@@ -14,6 +18,11 @@
     RTS
 }
 
+;------------------------------------------------------------------------------
+; Waits for any keypress. Does so by temporarily enabling System VIA interrups,
+; calling OSRDCH, and then disabling the interrupts again. Useful for debugging
+; purposes.
+;------------------------------------------------------------------------------
 .wait_key
 {
     SEI
@@ -22,7 +31,7 @@
     CLI
     JSR OSRDCH
     SEI
-        LDA #%01111111   ; disable all System VIA interrupts
+        LDA #%01111101   ; disable all System VIA interrupts (except VSYNC)
         STA VIA_INT_EN
     CLI
     RTS
