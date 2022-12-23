@@ -5,23 +5,23 @@
 .init_scroll
 {
     ; note CRTC start address is regular addr. / 8 (hence MOD/DIV 2048)
-    LDA #VID_MEM_START MOD 2048 : STA scroll_ptr
-    LDA #VID_MEM_START DIV 2048 : STA scroll_ptr + 1
+    lda #VID_MEM_START MOD 2048 : sta scroll_ptr
+    lda #VID_MEM_START DIV 2048 : sta scroll_ptr + 1
 
-    LDA #CRTC_REG_SCREEN_START_L  : STA CRTC_REG
-    LDA scroll_ptr                : STA CRTC_VAL
+    lda #CRTC_REG_SCREEN_START_L  : sta CRTC_REG
+    lda scroll_ptr                : sta CRTC_VAL
 
-    LDA #CRTC_REG_CURSOR_CTRL     : STA CRTC_REG
-    LDA #0                        : STA CRTC_VAL
+    lda #CRTC_REG_CURSOR_CTRL     : sta CRTC_REG
+    lda #0                        : sta CRTC_VAL
 
-    LDX #20 ; start drawing at just after right-most pos of screen
-    LDY #0
-    JSR vid_mem_for_xy
+    ldx #20 ; start drawing at just after right-most pos of screen
+    ldy #0
+    jsr vid_mem_for_xy
 
-    LDA vid_mem_ptr     : STA dest_ptr
-    LDA vid_mem_ptr + 1 : STA dest_ptr + 1
+    lda vid_mem_ptr     : sta dest_ptr
+    lda vid_mem_ptr + 1 : sta dest_ptr + 1
 
-    RTS
+    rts
 }
 
 ;------------------------------------------------------------------------------
@@ -33,23 +33,23 @@
 ;------------------------------------------------------------------------------
 .delay_scroll_start
 {
-    LDX num_screens_delay
+    ldx num_screens_delay
     .delay_n_pages_loop
-    BEQ delay_n_pages_done
+    beq delay_n_pages_done
     ; # 160 pixels / 2 pixels per scroll frame = 80 frames per page
     ; but add 10 more frames to allow for gap between physical screens
-    LDY #90
+    ldy #90
     .delay_1_page_loop
-    BEQ delay_1_page_done
-    JSR wait_vsync
-    DEY
-    JMP delay_1_page_loop
+    beq delay_1_page_done
+    jsr wait_vsync
+    dey
+    jmp delay_1_page_loop
     .delay_1_page_done
-    DEX
-    JMP delay_n_pages_loop
+    dex
+    jmp delay_n_pages_loop
     .delay_n_pages_done
 
-    RTS
+    rts
 }
 
 ;------------------------------------------------------------------------------
@@ -58,77 +58,77 @@
 ;------------------------------------------------------------------------------
 .scroll_single_char
 {
-    STA current_char
+    sta current_char
 
-    PHA
-    TXA
-    PHA
-    TYA
-    PHA
+    pha
+    txa
+    pha
+    tya
+    pha
 
     ; init strip counter (0-31)
-    LDX #0
+    ldx #0
 
     .shift_loop
 
-    LDA current_char
-    JSR print_2px_char_slice
+    lda current_char
+    jsr print_2px_char_slice
 
     ; wait for vsync
-    LDA #0
-    STA tick_flag
+    lda #0
+    sta tick_flag
     .wait_loop
-    LDA tick_flag
-    BEQ wait_loop
+    lda tick_flag
+    beq wait_loop
 
     .scroll_left_2px
-    CLC
-    INC scroll_ptr
-    BNE scroll_left_2px_done
-    INC scroll_ptr + 1
+    clc
+    inc scroll_ptr
+    bne scroll_left_2px_done
+    inc scroll_ptr + 1
 
     ; check for scroll wrap
-    LDA scroll_ptr + 1
-    CMP #&10
-    BMI skip_scroll_address_wrap
+    lda scroll_ptr + 1
+    cmp #&10
+    bmi skip_scroll_address_wrap
     ; wrap back to start of video memory (note CRTC start address is regular addr. / 8)
-    LDA #VID_MEM_START DIV 2048
-    STA scroll_ptr + 1
+    lda #VID_MEM_START DIV 2048
+    sta scroll_ptr + 1
     .skip_scroll_address_wrap
 
     .scroll_left_2px_done
-    LDA #CRTC_REG_SCREEN_START_L  : STA CRTC_REG
-    LDA scroll_ptr                : STA CRTC_VAL
-    LDA #CRTC_REG_SCREEN_START_H  : STA CRTC_REG
-    LDA scroll_ptr + 1            : STA CRTC_VAL
+    lda #CRTC_REG_SCREEN_START_L  : sta CRTC_REG
+    lda scroll_ptr                : sta CRTC_VAL
+    lda #CRTC_REG_SCREEN_START_H  : sta CRTC_REG
+    lda scroll_ptr + 1            : sta CRTC_VAL
 
-    JSR copy_2px_strip
+    jsr copy_2px_strip
 
     ; a single char is 64 pixels wide so we need to copy 32x 2-pixel strips
-    INX
-    CPX #32
-    BEQ done
+    inx
+    cpx #32
+    beq done
 
-    JMP shift_loop
+    jmp shift_loop
 
     .done
 
     ; keep track of character MOD 8 (0-7)
-    INC scroll_count
-    LDA scroll_count
-    CMP #8
-    BCC skip_reset_scroll_count
-    LDA #0
-    STA scroll_count
+    inc scroll_count
+    lda scroll_count
+    cmp #8
+    bcc skip_reset_scroll_count
+    lda #0
+    sta scroll_count
 
     .skip_reset_scroll_count
 
-    PLA
-    TAY
-    PLA
-    TAX
-    PLA
-    RTS
+    pla 
+    tay
+    pla 
+    tax
+    pla 
+    rts
 }
 
 ;------------------------------------------------------------------------------
@@ -143,77 +143,77 @@
 ; x: 2-pixel vertical strip index within character (in range 0-31, given we have 64-pixel wide characters)
 .copy_2px_strip
 {
-    TXA
-    PHA
+    txa
+    pha
 
     ; remember strip start address
-    LDA dest_ptr
-    PHA
-    LDA dest_ptr + 1
-    PHA
+    lda dest_ptr
+    pha
+    lda dest_ptr + 1
+    pha
 
     ; start copying 8x rows of 2 pixels
-    LDA #0
-    STA temp
-    LDA #offscreen_buffer MOD 256
-    STA src_ptr
-    LDA #offscreen_buffer DIV 256
-    STA src_ptr + 1
+    lda #0
+    sta temp
+    lda #offscreen_buffer MOD 256
+    sta src_ptr
+    lda #offscreen_buffer DIV 256
+    sta src_ptr + 1
 
     .copy_2px_strip_loop
-    LDY #7
+    ldy #7
     .copy_next_pixel_row
-    LDA (src_ptr), Y
-    STA (dest_ptr), Y
-    DEY
-    BPL copy_next_pixel_row
+    lda (src_ptr), Y
+    sta (dest_ptr), Y
+    dey
+    bpl copy_next_pixel_row
 
     ; next row of offscreen buffer starts 8 bytes from previous row
-    LDA #8
-    CLC
-    ADC src_ptr
-    STA src_ptr
+    lda #8
+    clc
+    adc src_ptr
+    sta src_ptr
 
     ; next row of screen starts 640 bytes from previous row
-    CLC
-    LDA #640 MOD 256
-    ADC dest_ptr
-    STA dest_ptr
-    LDA #640 DIV 256
-    ADC dest_ptr + 1
-    STA dest_ptr + 1
+    clc
+    lda #640 MOD 256
+    adc dest_ptr
+    sta dest_ptr
+    lda #640 DIV 256
+    adc dest_ptr + 1
+    sta dest_ptr + 1
 
     ; if we've reached the end of screen memory, wrap back to start
-    JSR handle_address_wrap
+    jsr handle_address_wrap
 
     ; done 8 on-screen rows (64 pixels) yet?
-    INC temp
-    LDA temp
-    CMP #8
-    BEQ copy_2px_stripDone
+    inc temp
+    lda temp
+    cmp #8
+    beq copy_2px_stripDone
 
-    JMP copy_2px_strip_loop
+    jmp copy_2px_strip_loop
 
     .copy_2px_stripDone
 
     ; restore screen memory pointer
-    PLA
-    STA dest_ptr + 1
-    PLA
-    STA dest_ptr
+    pla 
+    sta dest_ptr + 1
+    pla 
+    sta dest_ptr
 
     ; advance to next 2-pixel strip in screen memory pointer
-    CLC
-    ADC #8
-    STA dest_ptr
-    BCC done
-    INC dest_ptr + 1
-    JSR handle_address_wrap
+    clc
+    adc #8
+    sta dest_ptr
+    bcc done
+    inc dest_ptr + 1
+    jsr handle_address_wrap
 
     .done
-    PLA
-    TAX
-    RTS
+    pla 
+    tax
+    rts
 }
 
 ;------------------------------------------------------------------------------
@@ -223,15 +223,15 @@
 
 .handle_address_wrap
 {
-    LDA dest_ptr + 1
-    CMP #&80
-    BMI done
+    lda dest_ptr + 1
+    cmp #&80
+    bmi done
 
-    LDA dest_ptr + 1
-    SEC
-    SBC #&50
-    STA dest_ptr + 1
+    lda dest_ptr + 1
+    sec
+    sbc #&50
+    sta dest_ptr + 1
 
     .done
-    RTS
+    rts
 }

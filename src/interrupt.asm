@@ -4,26 +4,26 @@
 ;------------------------------------------------------------------------------
 .setup_interrupt_handler
 {
-    SEI
+    sei
 
     ; enable vsync interrupt
-    LDA #%10000010
-    STA VIA_INT_EN ; interrupt enable register
+    lda #%10000010
+    sta VIA_INT_EN ; interrupt enable register
 
     ; Store old IRQ1V
-    LDA IRQ1V
-    STA old_irqv
-    LDA IRQ1V+1
-    STA old_irqv + 1
+    lda IRQ1V
+    sta old_irqv
+    lda IRQ1V+1
+    sta old_irqv + 1
 
     ; Setup IRQ handler
-    LDA #irq_handler MOD 256
-    STA IRQ1V
-    LDA #irq_handler DIV 256
-    STA IRQ1V + 1
+    lda #irq_handler MOD 256
+    sta IRQ1V
+    lda #irq_handler DIV 256
+    sta IRQ1V + 1
 
-    CLI
-    RTS    
+    cli
+    rts    
 }
 
 ;------------------------------------------------------------------------------
@@ -31,13 +31,13 @@
 ;------------------------------------------------------------------------------
 .restore_interrupt_handler
 {
-    SEI
+    sei
 
-    LDA old_irqv     : STA IRQ1V
-    LDA old_irqv + 1 : STA IRQ1V + 1
+    lda old_irqv     : sta IRQ1V
+    lda old_irqv + 1 : sta IRQ1V + 1
 
-    CLI
-    RTS
+    cli
+    rts
 }
 
 ;------------------------------------------------------------------------------
@@ -45,23 +45,23 @@
 ;------------------------------------------------------------------------------
 .irq_handler
 {
-    LDA &FC
-    PHA
+    lda &FC
+    pha
 
-    LDA VIA_INT_FLAG
-    AND #%00000010 ; vsync interrupt flag
-    BEQ irq_handler_done
+    lda VIA_INT_FLAG
+    and #%00000010 ; vsync interrupt flag
+    beq irq_handler_done
 
-    STA VIA_INT_FLAG ; clear interrupt flag
+    sta VIA_INT_FLAG ; clear interrupt flag
 
     ; set tick flag to 1 to vert refresh
-    LDA #1
-    STA tick_flag
+    lda #1
+    sta tick_flag
 
     .irq_handler_done
 
-    PLA
-    STA &FC
+    pla 
+    sta &FC
     RTI
 }
 
@@ -71,10 +71,10 @@
 ;------------------------------------------------------------------------------
 .wait_vsync
 {
-    LDA #0
-    STA tick_flag
+    lda #0
+    sta tick_flag
     .wait_loop
-    LDA tick_flag
-    BEQ wait_loop
-    RTS
+    lda tick_flag
+    beq wait_loop
+    rts
 }

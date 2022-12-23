@@ -19,111 +19,111 @@ col_white = 7
 ;   A: ASCII character to print
 ;   X: Which slice of enlarged character to draw (range 0-31)
 ;------------------------------------------------------------------------------
-    STX screen_char_x
-    JSR get_char_ptr_for_ascii
+    stx screen_char_x
+    jsr get_char_ptr_for_ascii
 
-    LDA #offscreen_buffer MOD 256
-    STA offscreen_buff_ptr
-    LDA #offscreen_buffer DIV 256
-    STA offscreen_buff_ptr + 1
+    lda #offscreen_buffer MOD 256
+    sta offscreen_buff_ptr
+    lda #offscreen_buffer DIV 256
+    sta offscreen_buff_ptr + 1
 
     ; Save x to stack
-    LDA screen_char_x
-    PHA
+    lda screen_char_x
+    pha
 
     ; We get called 4 times for the same pixel within the source character.
     ; char_pixel_x tells us start pixel X pos within the enlarged character
     ; for each slice (0, 2, 4, 6)
-    AND #%00000011
-    STA char_pixel_x
-    CLC
-    ROL char_pixel_x
+    and #%00000011
+    sta char_pixel_x
+    clc
+    rol char_pixel_x
 
     ; Divide x by 4 to get on-screen character x pos in range 0-7
-    CLC
-    ROR screen_char_x
-    CLC
-    ROR screen_char_x
+    clc
+    ror screen_char_x
+    clc
+    ror screen_char_x
 
     ; Mask for pixel in X pos of source character
-    LDX screen_char_x
-    LDA #128
+    ldx screen_char_x
+    lda #128
     .set_x_mask_loop
-    DEX
-    BMI set_x_mask_done
-    CLC
-    ROR A
-    JMP set_x_mask_loop
+    dex
+    bmi set_x_mask_done
+    clc
+    ror A
+    jmp set_x_mask_loop
     .set_x_mask_done
-    STA char_pixel_mask
-    LDX screen_char_x
+    sta char_pixel_mask
+    ldx screen_char_x
 
-    LDY #0                         ; char row in Y
-    STY screen_char_y
+    ldy #0                         ; char row in Y
+    sty screen_char_y
 
     .print_2px_char_sliceRow
         .print_2px_char_slicePrintBlock
-            LDA (char_ptr), Y
-            AND char_pixel_mask
-            BEQ print_2px_char_slicePixelNotSet
-            LDA char_pixel_mask
-            PHA
-            JSR print_block
-            PLA
-            STA char_pixel_mask
+            lda (char_ptr), Y
+            and char_pixel_mask
+            beq print_2px_char_slicePixelNotSet
+            lda char_pixel_mask
+            pha
+            jsr print_block
+            pla 
+            sta char_pixel_mask
 
-            JMP print_2px_char_sliceNextRow
+            jmp print_2px_char_sliceNextRow
 
         .print_2px_char_slicePixelNotSet
-            LDA char_pixel_mask
-            PHA
-            LDX screen_char_x
-            JSR print_custom_infill_char
-            PLA
-            STA char_pixel_mask
+            lda char_pixel_mask
+            pha
+            ldx screen_char_x
+            jsr print_custom_infill_char
+            pla 
+            sta char_pixel_mask
 
         .print_2px_char_sliceNextRow 
-            INY
-            CPY #8
-            BEQ print_2px_char_sliceDone
-            STY screen_char_y
-            JMP print_2px_char_sliceRow
+            iny
+            cpy #8
+            beq print_2px_char_sliceDone
+            sty screen_char_y
+            jmp print_2px_char_sliceRow
 
     .print_2px_char_sliceDone
-    PLA
-    TAX
-RTS
+    pla 
+    tax
+rts
 
 ;------------------------------------------------------------------------------
 .print_block
 ;   Copy a solid block of 2x8 pixels to the offscreen buffer.
 ;------------------------------------------------------------------------------
-    PHA
-    TXA
-    PHA
-    TYA
-    PHA
+    pha
+    txa
+    pha
+    tya
+    pha
 
-    LDY #0
+    ldy #0
     .block_loop
-        LDA #col_red OR (col_red * 2)
-        STA (offscreen_buff_ptr), Y
-        INY
-        CPY #8
-        BNE block_loop
+        lda #col_red OR (col_red * 2)
+        sta (offscreen_buff_ptr), Y
+        iny
+        cpy #8
+        bne block_loop
 
-    LDA offscreen_buff_ptr
-    CLC
-    ADC #8
-    STA offscreen_buff_ptr
+    lda offscreen_buff_ptr
+    clc
+    adc #8
+    sta offscreen_buff_ptr
 
-    PLA
-    TAY
-    PLA
-    TAX
-    PLA
+    pla 
+    tay
+    pla 
+    tax
+    pla 
 
-    RTS
+    rts
 
 
 ;------------------------------------------------------------------------------
@@ -140,142 +140,142 @@ RTS
 ;
 ;   On exit, custom_char populated with infill mask; A contains flags
 ;------------------------------------------------------------------------------
-    PHA
-    LDA #0
-    STA temp                        ; init mask to store a bit for pixel above, right, left and below
+    pha
+    lda #0
+    sta temp                        ; init mask to store a bit for pixel above, right, left and below
 
     .check_top
-    CPY #0
-    BEQ check_right                  ; no pixel above, move along...
-    DEY                             ; decrement Y pos
-    LDA (char_ptr), Y                ; get that row
-    AND char_pixel_mask               ; check bit at same X pos (i.e. immediately above)
-    BEQ check_top_restore_y            ; pixel above is clear, move along...
+    cpy #0
+    beq check_right                  ; no pixel above, move along...
+    dey                             ; decrement Y pos
+    lda (char_ptr), Y                ; get that row
+    and char_pixel_mask               ; check bit at same X pos (i.e. immediately above)
+    beq check_top_restore_y            ; pixel above is clear, move along...
 
-    LDA temp                        ; set flag for top
-    ORA #%00000001
-    STA temp
+    lda temp                        ; set flag for top
+    ora #%00000001
+    sta temp
 
     .check_top_restore_y               ; restore Y and load contents of that row, ready for
-    INY                             ; checking left & right pixels
+    iny                             ; checking left & right pixels
 
     .check_right
-    CPX #7
-    BEQ check_left                   ; no pixel to right, move along...
-    CLC
-    ROR char_pixel_mask               ; move mask one bit to right
-    LDA (char_ptr), Y                ; get character row
-    AND char_pixel_mask               ; check whether bit to right is set
-    BEQ check_right_restore_mask       ; bit to right is not set, move along
+    cpx #7
+    beq check_left                   ; no pixel to right, move along...
+    clc
+    ror char_pixel_mask               ; move mask one bit to right
+    lda (char_ptr), Y                ; get character row
+    and char_pixel_mask               ; check whether bit to right is set
+    beq check_right_restore_mask       ; bit to right is not set, move along
 
-    LDA temp                        ; set flag for right
-    ORA #%00000010
-    STA temp
+    lda temp                        ; set flag for right
+    ora #%00000010
+    sta temp
 
     .check_right_restore_mask          ; restore mask
-    CLC
-    ROL char_pixel_mask
+    clc
+    rol char_pixel_mask
 
     .check_left
-    CPX #0
-    BEQ check_bottom                 ; no pixel to left, move along
-    CLC
-    ROL char_pixel_mask               ; move mask one bit to left
-    LDA (char_ptr), Y                ; get character row
-    AND char_pixel_mask               ; check whether bit to left is set
-    BEQ check_left_restore_mask        ; bit to left is clear, move along
+    cpx #0
+    beq check_bottom                 ; no pixel to left, move along
+    clc
+    rol char_pixel_mask               ; move mask one bit to left
+    lda (char_ptr), Y                ; get character row
+    and char_pixel_mask               ; check whether bit to left is set
+    beq check_left_restore_mask        ; bit to left is clear, move along
 
-    LDA temp                        ; set flag for left
-    ORA #%00000100
-    STA temp
+    lda temp                        ; set flag for left
+    ora #%00000100
+    sta temp
 
     .check_left_restore_mask
-    CLC
-    ROR char_pixel_mask
+    clc
+    ror char_pixel_mask
 
     .check_bottom
-    CPY #7
-    BEQ build_char
-    INY
-    LDA (char_ptr), Y                ; get character row
-    AND char_pixel_mask
-    BEQ check_bottom_restore_y
+    cpy #7
+    beq build_char
+    iny
+    lda (char_ptr), Y                ; get character row
+    and char_pixel_mask
+    beq check_bottom_restore_y
 
-    LDA temp                        ; set flag for bottom
-    ORA #%00001000
-    STA temp
+    lda temp                        ; set flag for bottom
+    ora #%00001000
+    sta temp
 
     .check_bottom_restore_y
-    DEY
+    dey
 
     .build_char
-    LDA #0
-    STA flags
+    lda #0
+    sta flags
 
     .build_top
-    LDA #%00000001           ; check whether pixel above is set
-    AND temp
-    BEQ build_buttom
+    lda #%00000001           ; check whether pixel above is set
+    and temp
+    beq build_buttom
 
         .build_topLeft
-        LDA #%00000100      ; check whether pixel to left is set
-        AND temp
-        BEQ build_top_right
+        lda #%00000100      ; check whether pixel to left is set
+        and temp
+        beq build_top_right
 
-        LDA flags           ; both top and left set, so set top-left flag
-        ORA #%00000001
-        STA flags
+        lda flags           ; both top and left set, so set top-left flag
+        ora #%00000001
+        sta flags
 
         .build_top_right
-        LDA #%00000010      ; check whether pixel to right is set
-        AND temp
-        BEQ build_buttom
+        lda #%00000010      ; check whether pixel to right is set
+        and temp
+        beq build_buttom
 
-        LDA flags           ; both top and right set, so set top-right flag
-        ORA #%00000010
-        STA flags
+        lda flags           ; both top and right set, so set top-right flag
+        ora #%00000010
+        sta flags
 
     .build_buttom
-    LDA #%00001000           ; check whether pixel below is set
-    AND temp
-    BEQ doDraw
+    lda #%00001000           ; check whether pixel below is set
+    and temp
+    beq do_draw
 
         .build_buttom_left
-        LDA #%00000100      ; check whether pixel to left is set
-        AND temp
-        BEQ build_buttom_right
+        lda #%00000100      ; check whether pixel to left is set
+        and temp
+        beq build_buttom_right
 
-        LDA flags           ; both bottom and left set, so set bottom-left flag
-        ORA #%00001000
-        STA flags
+        lda flags           ; both bottom and left set, so set bottom-left flag
+        ora #%00001000
+        sta flags
 
         .build_buttom_right
-        LDA #%00000010      ; check whether pixel to right is set
-        AND temp
-        BEQ doDraw
+        lda #%00000010      ; check whether pixel to right is set
+        and temp
+        beq do_draw
 
-        LDA flags           ; both bottom and right set, so set bottom-right flag
-        ORA #%00000100
-        STA flags
+        lda flags           ; both bottom and right set, so set bottom-right flag
+        ora #%00000100
+        sta flags
 
-    .doDraw
+    .do_draw
 
-    TXA
-    PHA
-    TYA
-    PHA
+    txa
+    pha
+    tya
+    pha
 
-    LDA flags
+    lda flags
 
-    JSR print_anti_alias_corners
+    jsr print_anti_alias_corners
 
-    PLA
-    TAY
-    PLA
-    TAX
-    PLA
+    pla 
+    tay
+    pla 
+    tax
+    pla 
 
-    RTS
+    rts
 
 ;------------------------------------------------------------------------------
 .print_anti_alias_corners
@@ -288,37 +288,37 @@ RTS
 ;            ^----- bottom-right
 ;           ^------ bottom-left
 ;--------------------------------------------------
-    STA anti_alias_corner_flags
+    sta anti_alias_corner_flags
 
-    PHA                         ; save accumulator
+    pha                         ; save accumulator
 
-    LDA char_ptr                 ; save char_ptr
-    PHA
-    LDA char_ptr+1
-    PHA
+    lda char_ptr                 ; save char_ptr
+    pha
+    lda char_ptr+1
+    pha
 
-    LDA anti_alias_corner_flags
-    BEQ noCorners
+    lda anti_alias_corner_flags
+    beq noCorners
     NOP
     .noCorners
 
-    CLC
-    ROL A                        ; x8
-    ROL A
-    ROL A
-    ADC #anti_alias_chars MOD 256
-    STA char_ptr
-    LDA #0
-    ADC #anti_alias_chars DIV 256
-    STA char_ptr+1
+    clc
+    rol A                        ; x8
+    rol A
+    rol A
+    adc #anti_alias_chars MOD 256
+    sta char_ptr
+    lda #0
+    adc #anti_alias_chars DIV 256
+    sta char_ptr+1
 
-    JSR print_char
+    jsr print_char
 
-    PLA : STA char_ptr + 1
-    PLA : STA char_ptr
-    PLA
+    pla  : sta char_ptr + 1
+    pla  : sta char_ptr
+    pla 
 
-    RTS
+    rts
 
 ;------------------------------------------------------------------------------
 .get_char_ptr_for_ascii
@@ -326,19 +326,19 @@ RTS
 ;
 ;   A:  Character to retrieve
 ;------------------------------------------------------------------------------
-    STA osword_0a
+    sta osword_0a
 
-    LDA #&0A
-    LDX #osword_0a MOD 256
-    LDY #osword_0a DIV 256
-    JSR OSWORD
+    lda #&0A
+    ldx #osword_0a MOD 256
+    ldy #osword_0a DIV 256
+    jsr OSWORD
 
-    LDX #custom_char MOD 256
-    LDY #custom_char DIV 256
-    STX char_ptr
-    STY char_ptr+1
+    ldx #custom_char MOD 256
+    ldy #custom_char DIV 256
+    stx char_ptr
+    sty char_ptr+1
 
-    RTS
+    rts
 
 ;------------------------------------------------------------------------------
 .print_char
@@ -348,67 +348,67 @@ RTS
 ;   char_pixel_x:   start bit position of strip to render within source char
 ;                   (0, 2, 4, 6)
 ;------------------------------------------------------------------------------
-    TYA
-    PHA
+    tya
+    pha
 
     ; Mask for pixel in X pos of source character
-    LDY char_pixel_x
-    LDA #128
+    ldy char_pixel_x
+    lda #128
     .set_mask_loop
-    DEY
-    BMI set_mask_done
-    CLC
-    ROR A
-    JMP set_mask_loop
+    dey
+    bmi set_mask_done
+    clc
+    ror A
+    jmp set_mask_loop
     .set_mask_done
-    STA print_mask
+    sta print_mask
 
-    LDY #0
+    ldy #0
 
     .print_char_pix_a
-        LDA #0
-        STA video_mem_value
+        lda #0
+        sta video_mem_value
 
-        LDA (char_ptr), Y
-        AND print_mask
-        BEQ print_char_pix_b
+        lda (char_ptr), Y
+        and print_mask
+        beq print_char_pix_b
 
-        LDA #col_red
-        STA video_mem_value
+        lda #col_red
+        sta video_mem_value
 
     .print_char_pix_b
-        CLC
-        ROR print_mask
+        clc
+        ror print_mask
 
-        LDA (char_ptr), Y
-        AND print_mask
-        BEQ print_2px_byte
+        lda (char_ptr), Y
+        and print_mask
+        beq print_2px_byte
 
-        LDA #(col_red * 2)
-        ORA video_mem_value
-        STA video_mem_value
+        lda #(col_red * 2)
+        ora video_mem_value
+        sta video_mem_value
 
     .print_2px_byte
-        CLC
-        ROL print_mask ; restore to original value
+        clc
+        rol print_mask ; restore to original value
 
-        LDA video_mem_value
-        STA (offscreen_buff_ptr), Y
+        lda video_mem_value
+        sta (offscreen_buff_ptr), Y
 
-        INY
-        TYA
-        AND #&08
-        BEQ print_char_pix_a
+        iny
+        tya
+        and #&08
+        beq print_char_pix_a
 
     .done
-    LDA offscreen_buff_ptr
-    CLC
-    ADC #8
-    STA offscreen_buff_ptr
+    lda offscreen_buff_ptr
+    clc
+    adc #8
+    sta offscreen_buff_ptr
 
-    PLA
-    TAY
-RTS
+    pla 
+    tay
+rts
 
 ;------------------------------------------------------------------------------
 .vid_mem_for_xy
@@ -418,83 +418,83 @@ RTS
 ;   Y: Y character co-ord
 ;------------------------------------------------------------------------------
 {
-    PHA
+    pha
 
     ; memory loc = VID_MEM_START + (Y * 640) + (X * 32)
 
     ; Y * 640 - use lookup
-    TYA
-    ROL A ; x2 to get word offset from start of lookup table (table contains
+    tya
+    rol A ; x2 to get word offset from start of lookup table (table contains
           ; 16-bit locations
-    CLC
-    ADC #table_640 MOD 256
-    STA table_ptr
-    LDA #0
-    ADC #table_640 DIV 256
-    STA table_ptr+1
+    clc
+    adc #table_640 MOD 256
+    sta table_ptr
+    lda #0
+    adc #table_640 DIV 256
+    sta table_ptr+1
 
     ; + VID_MEM_START
-    LDY #1
-    CLC
-    LDA (table_ptr), Y
-    ADC #VID_MEM_START MOD 256
-    STA vid_mem_ptr
-    LDY #0
-    LDA (table_ptr), Y
-    ADC #VID_MEM_START DIV 256
-    STA vid_mem_ptr+1
+    ldy #1
+    clc
+    lda (table_ptr), Y
+    adc #VID_MEM_START MOD 256
+    sta vid_mem_ptr
+    ldy #0
+    lda (table_ptr), Y
+    adc #VID_MEM_START DIV 256
+    sta vid_mem_ptr+1
 
     ; + X*32 100000
-    TXA
-    STA block_x_offset
-    LDA #0
-    STA block_x_offset+1
+    txa
+    sta block_x_offset
+    lda #0
+    sta block_x_offset+1
 
     .print_block_mult_x2
-        CLC
-        ASL block_x_offset
-        BCC print_block_mult_x4
-        INC block_x_offset+1
+        clc
+        asl block_x_offset
+        bcc print_block_mult_x4
+        inc block_x_offset+1
 
     .print_block_mult_x4
-        ASL block_x_offset+1
-        CLC
-        ASL block_x_offset
-        BCC print_block_mult_x8
-        INC block_x_offset+1
+        asl block_x_offset+1
+        clc
+        asl block_x_offset
+        bcc print_block_mult_x8
+        inc block_x_offset+1
     
     .print_block_mult_x8
-        ASL block_x_offset+1
-        CLC
-        ASL block_x_offset
-        BCC print_block_mult_x16
-        INC block_x_offset+1
+        asl block_x_offset+1
+        clc
+        asl block_x_offset
+        bcc print_block_mult_x16
+        inc block_x_offset+1
     
     .print_block_mult_x16
-        ASL block_x_offset+1
-        CLC
-        ASL block_x_offset
-        BCC print_block_mult_x32
-        INC block_x_offset+1
+        asl block_x_offset+1
+        clc
+        asl block_x_offset
+        bcc print_block_mult_x32
+        inc block_x_offset+1
     
     .print_block_mult_x32
-        ASL block_x_offset+1
-        CLC
-        ASL block_x_offset
-        BCC done
-        INC block_x_offset+1
+        asl block_x_offset+1
+        clc
+        asl block_x_offset
+        bcc done
+        inc block_x_offset+1
     
     .done
-    CLC
-    LDA block_x_offset
-    ADC vid_mem_ptr
-    STA vid_mem_ptr
-    LDA block_x_offset+1
-    ADC vid_mem_ptr+1
-    STA vid_mem_ptr+1
+    clc
+    lda block_x_offset
+    adc vid_mem_ptr
+    sta vid_mem_ptr
+    lda block_x_offset+1
+    adc vid_mem_ptr+1
+    sta vid_mem_ptr+1
 
-    PLA
-    RTS
+    pla 
+    rts
 }
 
 .anti_alias_corner_flags

@@ -53,13 +53,13 @@ GUARD &26FF
 ;------------------------------------------------------------------------------
 .start
 {
-    LDA run_mode
-    CMP #RUN_MODE_STANDALONE
-    BEQ start_scrolling
-    CMP #RUN_MODE_ECONET_LEADER
-    BEQ start_leader
-    CMP #RUN_MODE_ECONET_FOLLOWER
-    BEQ start_follower
+    lda run_mode
+    cmp #RUN_MODE_STANDALONE
+    beq start_scrolling
+    cmp #RUN_MODE_ECONET_LEADER
+    beq start_leader
+    cmp #RUN_MODE_ECONET_FOLLOWER
+    beq start_follower
 }
 
 ;------------------------------------------------------------------------------
@@ -68,8 +68,8 @@ GUARD &26FF
 ;------------------------------------------------------------------------------
 .start_leader
 {
-    JSR broadcast_start
-    JMP start_scrolling
+    jsr broadcast_start
+    jmp start_scrolling
 }
 
 ;------------------------------------------------------------------------------
@@ -77,8 +77,8 @@ GUARD &26FF
 ;------------------------------------------------------------------------------
 .start_follower
 {
-    JSR wait_broadcast_start
-    JMP start_scrolling
+    jsr wait_broadcast_start
+    jmp start_scrolling
 }
 
 ;------------------------------------------------------------------------------
@@ -92,56 +92,56 @@ GUARD &26FF
 ;------------------------------------------------------------------------------
 .start_scrolling
 {
-    SEI
-        LDA #%01111111   ; disable all System VIA interrupts
-        STA VIA_INT_EN
-    CLI
+    sei
+        lda #%01111111   ; disable all System VIA interrupts
+        sta VIA_INT_EN
+    cli
 
     ; Mode 2 = 160x256 pixels / 20x32 text positions
-    LDA #22 : JSR OSWRCH
-    LDA #2  : JSR OSWRCH
+    lda #22 : jsr OSWRCH
+    lda #2  : jsr OSWRCH
 
     ; Configure CRTC to show 8 rows
-    LDA #CRTC_REG_DISP_ROWS : STA CRTC_REG
-    LDA #8                  : STA CRTC_VAL
+    lda #CRTC_REG_DISP_ROWS : sta CRTC_REG
+    lda #8                  : sta CRTC_VAL
 
     ; Configure CRTC to offset visible area to centre of screen
-    LDA #7                  : STA CRTC_REG
-    LDA #24                 : STA CRTC_VAL
+    lda #7                  : sta CRTC_REG
+    lda #24                 : sta CRTC_VAL
 
-    JSR setup_interrupt_handler
+    jsr setup_interrupt_handler
 
-    LDA #0
-    STA scroll_count
+    lda #0
+    sta scroll_count
 
-    JSR init_scroll
-    JSR delay_scroll_start
+    jsr init_scroll
+    jsr delay_scroll_start
 
     .restart
-    LDA #message MOD 256 : STA message_ptr
-    LDA #message DIV 256 : STA message_ptr + 1
+    lda #message MOD 256 : sta message_ptr
+    lda #message DIV 256 : sta message_ptr + 1
 
     .message_loop
-    LDY #0
-    LDA (message_ptr), Y
-    CMP #&0d
-    BEQ done
+    ldy #0
+    lda (message_ptr), Y
+    cmp #&0d
+    beq done
 
-    CLC
-    INC message_ptr
-    BNE inc_message_ptr_done
-    INC message_ptr + 1
+    clc
+    inc message_ptr
+    bne inc_message_ptr_done
+    inc message_ptr + 1
     .inc_message_ptr_done
 
-    JSR scroll_single_char
+    jsr scroll_single_char
 
-    INY
-    JMP message_loop
+    iny
+    jmp message_loop
 
     .done
-    JMP restart
+    jmp restart
 
-    RTS
+    rts
 }
 
 ALIGN &100

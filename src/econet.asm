@@ -2,7 +2,7 @@
 ; Called by BASIC launcher Menu to start the application on a remote machine.
 ; This is done by performing two immediate (non-cooperative) operations: a POKE
 ; to load the app into memory — including its start args and message to be
-; displayed — followed by a JSR to start it. Prior to calling.
+; displayed — followed by a jsr to start it.
 ;
 ;   A:                  Econet station number
 ;   run_mode:           Should be set to RUN_MODE_ECONET_FOLLOWER
@@ -13,20 +13,20 @@
 ;------------------------------------------------------------------------------
 .launch_app_remote
 {
-  STA jsr_control_block_station
+  sta jsr_control_block_station
 
-  JSR poke_app
-  TXA
-  AND #&40
-  BNE done ; error poking app
+  jsr poke_app
+  txa
+  and #&40
+  bne done ; error poking app
 
-  LDA #&10
-  LDX #jsr_control_block MOD 256
-  LDY #jsr_control_block DIV 256
-  JSR OSWORD
+  lda #&10
+  ldx #jsr_control_block MOD 256
+  ldy #jsr_control_block DIV 256
+  jsr OSWORD
 
   .done
-  RTS
+  rts
 }
 
 ;------------------------------------------------------------------------------
@@ -36,58 +36,58 @@
 ;------------------------------------------------------------------------------
 .poke_app
 {
-  PHA
-  STA poke_control_block_station
+  pha
+  sta poke_control_block_station
 
   ; configure for econet follower before poking so stations start in correct mode
-  LDA run_mode
-  PHA
-  LDA #RUN_MODE_ECONET_FOLLOWER
-  STA run_mode
+  lda run_mode
+  pha
+  lda #RUN_MODE_ECONET_FOLLOWER
+  sta run_mode
 
-  LDA #10
-  STA econet_retries
+  lda #10
+  sta econet_retries
 
   .retry_poke
-  DEC econet_retries
-  BEQ done
+  dec econet_retries
+  beq done
 
   .start_poke
   ; restore control byte which gets overwritten by OSWORD before retry
-  LDA #&82
-  STA poke_control_block_control_byte
+  lda #&82
+  sta poke_control_block_control_byte
 
-  LDA #&10
-  LDX #poke_control_block MOD 256
-  LDY #poke_control_block DIV 256
-  JSR OSWORD
+  lda #&10
+  ldx #poke_control_block MOD 256
+  ldy #poke_control_block DIV 256
+  jsr OSWORD
 
-  LDA poke_control_block_control_byte
-  BEQ start_poke ; retry until started
+  lda poke_control_block_control_byte
+  beq start_poke ; retry until started
   
   .wait_for_completion
-  LDA #&32
-  JSR OSBYTE
-  TXA
-  AND #%10000000
-  BNE wait_for_completion
+  lda #&32
+  jsr OSBYTE
+  txa
+  and #%10000000
+  bne wait_for_completion
 
   ; check for non-fatal errors
-  CPX #&41
-  BEQ delay_and_retry
-  CPX #&42
-  BEQ delay_and_retry
-  JMP done
+  cpx #&41
+  beq delay_and_retry
+  cpx #&42
+  beq delay_and_retry
+  jmp done
 
   .delay_and_retry
-  JSR delay
-  JMP retry_poke
+  jsr delay
+  jmp retry_poke
 
   .done
-  PLA
-  STA run_mode
-  PLA
-  RTS
+  pla 
+  sta run_mode
+  pla 
+  rts
 }
 
 ;------------------------------------------------------------------------------
@@ -96,46 +96,46 @@
 ;------------------------------------------------------------------------------
 .broadcast_start
 {
-  LDA #10
-  STA econet_retries
+  lda #10
+  sta econet_retries
 
   .retry_broadcast
-  DEC econet_retries
-  BEQ done
+  dec econet_retries
+  beq done
 
   .start_broadcast
   ; restore control byte which gets overwritten by OSWORD before retry
-  LDA #&82
-  STA broadcast_control_block_control_byte
+  lda #&82
+  sta broadcast_control_block_control_byte
 
-  LDA #&10
-  LDX #broadcast_control_block MOD 256
-  LDY #broadcast_control_block DIV 256
-  JSR OSWORD
+  lda #&10
+  ldx #broadcast_control_block MOD 256
+  ldy #broadcast_control_block DIV 256
+  jsr OSWORD
 
-  LDA broadcast_control_block_control_byte
-  BEQ start_broadcast ; retry until started
+  lda broadcast_control_block_control_byte
+  beq start_broadcast ; retry until started
   
   .wait_for_completion
-  LDA #&32
-  JSR OSBYTE
-  TXA
-  AND #%10000000
-  BNE wait_for_completion
+  lda #&32
+  jsr OSBYTE
+  txa
+  and #%10000000
+  bne wait_for_completion
 
   ; check for non-fatal errors
-  CPX #&41
-  BEQ delay_and_retry
-  CPX #&42
-  BEQ delay_and_retry
-  JMP done
+  cpx #&41
+  beq delay_and_retry
+  cpx #&42
+  beq delay_and_retry
+  jmp done
 
   .delay_and_retry
-  JSR delay
-  JMP retry_broadcast
+  jsr delay
+  jmp retry_broadcast
 
   .done
-  RTS
+  rts
 }
 
 ;------------------------------------------------------------------------------
@@ -144,45 +144,45 @@
 ;------------------------------------------------------------------------------
 .wait_broadcast_start
 {
-  ; read JSR args and clear protection bits
-  LDA #&12
-  LDX #jsr_rx_control_block MOD 256
-  LDY #jsr_rx_control_block DIV 256
-  JSR OSWORD
+  ; read jsr args and clear protection bits
+  lda #&12
+  ldx #jsr_rx_control_block MOD 256
+  ldy #jsr_rx_control_block DIV 256
+  jsr OSWORD
 
   ; reenable interrupts
-  CLI
+  cli
 
   ; open receive block
-  LDA #&00
-  STA receive_control_block_control_byte
+  lda #&00
+  sta receive_control_block_control_byte
 
-  LDA #&11
-  LDX #receive_control_block MOD 256
-  LDY #receive_control_block DIV 256
-  JSR OSWORD
+  lda #&11
+  ldx #receive_control_block MOD 256
+  ldy #receive_control_block DIV 256
+  jsr OSWORD
 
   ; note receive_control_block_control_byte now contains RX CB number
 
   ; poll receive block for reception 
   .wait_loop
-  LDA #&33
-  LDX receive_control_block_control_byte
-  JSR OSBYTE
-  TXA
-  AND #%10000000
-  BEQ wait_loop
+  lda #&33
+  ldx receive_control_block_control_byte
+  jsr OSBYTE
+  txa
+  and #%10000000
+  beq wait_loop
 
   ; read control block back
-  LDA #&11
-  LDX #receive_control_block MOD 256
-  LDY #receive_control_block DIV 256
-  JSR OSWORD
+  lda #&11
+  ldx #receive_control_block MOD 256
+  ldy #receive_control_block DIV 256
+  jsr OSWORD
 
-  LDA #68
-  JSR OSWRCH
+  lda #68
+  jsr OSWRCH
 
-  RTS
+  rts
 }
 
 .econet_retries
