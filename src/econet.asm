@@ -138,9 +138,6 @@
   LDY #receive_control_block DIV 256
   JSR OSWORD
 
-  LDA #66
-  JSR OSWRCH
-
   ; note receive_control_block_control_byte now contains RX CB number
 
   ; poll receive block for reception 
@@ -151,9 +148,6 @@
   TXA
   AND #%10000000
   BEQ wait_loop
-
-  LDA #67
-  JSR OSWRCH
 
   ; read control block back
   LDA #&11

@@ -54,3 +54,13 @@
     STA &FC
     RTI
 }
+
+.wait_vsync
+{
+    LDA #0
+    STA tick_flag
+    .wait_loop
+    LDA tick_flag
+    BEQ wait_loop
+    RTS
+}

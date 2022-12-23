@@ -1,36 +1,50 @@
-1 LAUNCH=&2000:RUNMODE=&2700:MSGBUF=&2701:POKEAPP=&24D2
-2 *LOAD "Code"
-3 *NET
-8 REPEAT
-9 MODE 7
-10 PRINT "Jumbo text scroller"
-20 PRINT "==================="
-30 PRINT "Choose run mode:"
-40 PRINT "1. Standalone"
-50 PRINT "2. Econet"
-70 LET M = GET
-80 IF M = 49 THEN PROCstandalone
-90 IF M = 50 THEN PROCleader
-100 IF M = 51 THEN PROCfollower
-110 UNTIL FALSE
-120 DEF PROCstandalone
-130 INPUT LINE "Message to scroll ", MSG$
-140 ?RUNMODE=1
-150 $MSGBUF=MSG$
-160 CALL LAUNCH
-170 ENDPROC
-180 DEF PROCleader
-190 INPUT LINE "Message to scroll ", MSG$
-195 ?RUNMODE=2
-200 $MSGBUF=MSG$
-205 PRINT "Please enter econet station numbers in right->left order (not including this one)."
-210 INPUT "Follower station number ", A%
-220 U% = USR POKEAPP
-230 PRINT U%
-240 INPUT "WAITING ", G%
-360 CALL LAUNCH
-490 ENDPROC
-500 DEF PROCfollower
-510 ?&2601=2
-520 CALL &2000, MSG$
-530 ENDPROC
+10 LAUNCH=&2000:RUNMODE=&2700:DELAY=&2701:MSGBUF=&2702:POKEAPP=&24F0
+20 *LOAD "Code"
+30 MODE 7
+35 PRINT 
+40 PRINT "Jumbo text scroller"
+50 PRINT "===================" ' ""
+60 PRINT "Choose run mode:"
+70 PRINT "1. Standalone"
+80 PRINT "2. Econet"
+90 REPEAT
+100 LET M = GET
+110 IF M = 49 THEN PROCstandalone : GOTO 30
+120 IF M = 50 THEN PROCeconet : GOTO 30
+130 UNTIL FALSE
+135 
+140 DEF PROCstandalone
+150 PROCgetmsg
+160 ?RUNMODE=1
+180 CALL LAUNCH
+190 ENDPROC
+195 
+200 DEF PROCeconet
+205 PROCgetmsg
+210 ?RUNMODE=2
+220 *NET
+250 PRINT "" ' "Please ensure stations are:" ' ""
+260 PRINT "* Using Econet filesystem e.g. CTRL+BREAK+N"
+270 PRINT "* Not showing 'No Clock' message"
+280 PRINT "* Not protected" ' ""
+285 ?DELAY = 0
+290 REPEAT
+295 ?DELAY = ?DELAY + 1
+300 INPUT "Station number (return to stop): " A%
+305 IF NOT (A%=0) THEN CALL POKEAPP
+310 UNTIL A% = 0
+320 PRINT "Press any key to start!"
+325 LET M = GET
+326 ?DELAY = 0
+330 CALL LAUNCH
+340 ENDPROC
+350 
+360 DEF PROCgetmsg
+370 INPUT LINE "Message to scroll: " MSG$
+380 $MSGBUF=MSG$
+390 ENDPROC
+400
+410 A%=!-4
+420 REPEAT:A%=A%+1:UNTIL !A%=&F700FBD0
+430 REPEAT:A%=A%+1:UNTIL ?A%=32
+440 ver$="":FOR B%=1 TO 4:ver$=ver$+CHR$(A%?B%):NEXT

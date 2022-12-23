@@ -56,7 +56,7 @@ GUARD &26FF
 .start_leader
 {
     JSR broadcast_start
-    JMP start_scrolling
+    JSR start_scrolling
 }
 
 .start_follower
@@ -80,20 +80,21 @@ GUARD &26FF
     LDA #CRTC_REG_DISP_ROWS : STA CRTC_REG
     LDA #8                  : STA CRTC_VAL
 
-    ; Configure CRTC to show 8 rows
-    LDA #7 : STA CRTC_REG
-    LDA #24                  : STA CRTC_VAL
+    ; Configure CRTC to offset visible area to centre of screen
+    LDA #7                  : STA CRTC_REG
+    LDA #24                 : STA CRTC_VAL
 
     JSR setup_interrupt_handler
-
-    .restart
-    LDA #message MOD 256 : STA message_ptr
-    LDA #message DIV 256 : STA message_ptr + 1
 
     LDA #0
     STA scroll_count
 
     JSR init_scroll
+    JSR delay_scroll_start
+
+    .restart
+    LDA #message MOD 256 : STA message_ptr
+    LDA #message DIV 256 : STA message_ptr + 1
 
     .message_loop
     LDY #0
@@ -113,17 +114,15 @@ GUARD &26FF
     JMP message_loop
 
     .done
-    JSR restore_interrupt_handler
-
-    .loop_forever
-    JMP loop_forever
+    JMP restart
 
     RTS
 }
 
 ALIGN &100
-.offscreen_buffer   SKIP 64
-.current_char        SKIP 1
+; stores 2-pixel (1 byte) strip of 64 pixels height prior to copying to screen
+.offscreen_buffer       SKIP 64
+.current_char           SKIP 1
 
 INCLUDE "interrupt.asm"
 INCLUDE "scroll.asm"
@@ -132,8 +131,13 @@ INCLUDE "util.asm"
 INCLUDE "econet.asm"
 INCLUDE "tables.asm"
 
+; Args are passed in here
 ORG &2700
-.run_mode           SKIP 1
+.run_mode
+    EQUB RUN_MODE_STANDALONE
+; standalone or leader start immediately (0), next station is delayed by 1 screen etc.
+.num_screens_delay
+    EQUB 0
 .message
     EQUS "Message goes here."
     EQUB &0d

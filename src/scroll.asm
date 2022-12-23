@@ -11,12 +11,33 @@
     LDA #CRTC_REG_CURSOR_CTRL     : STA CRTC_REG
     LDA #0                        : STA CRTC_VAL
 
-    LDX #20
+    LDX #20 ; start drawing at just after right-most pos of screen
     LDY #0
     JSR vid_mem_for_xy
 
     LDA vid_mem_ptr     : STA dest_ptr
     LDA vid_mem_ptr + 1 : STA dest_ptr + 1
+
+    RTS
+}
+
+.delay_scroll_start
+{
+    LDX num_screens_delay
+    .delay_n_pages_loop
+    BEQ delay_n_pages_done
+    ; # 160 pixels / 2 pixels per scroll frame = 80 frames per page
+    ; but add 10 more frames to allow for gap between physical screens
+    LDY #90
+    .delay_1_page_loop
+    BEQ delay_1_page_done
+    JSR wait_vsync
+    DEY
+    JMP delay_1_page_loop
+    .delay_1_page_done
+    DEX
+    JMP delay_n_pages_loop
+    .delay_n_pages_done
 
     RTS
 }
@@ -71,6 +92,7 @@
 
     JSR copy_2px_strip
 
+    ; a single char is 64 pixels wide, so we need to copy 32x 2-pixel strips
     INX
     CPX #32
     BEQ done
