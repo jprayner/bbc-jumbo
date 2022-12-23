@@ -43,8 +43,3 @@
 370 INPUT LINE "Message to scroll: " MSG$
 380 $MSGBUF=MSG$
 390 ENDPROC
-400
-410 A%=!-4
-420 REPEAT:A%=A%+1:UNTIL !A%=&F700FBD0
-430 REPEAT:A%=A%+1:UNTIL ?A%=32
-440 ver$="":FOR B%=1 TO 4:ver$=ver$+CHR$(A%?B%):NEXT

@@ -1,4 +1,4 @@
 beebasm
 *.ssd
-
-
+debug.sh
+stage.sh
