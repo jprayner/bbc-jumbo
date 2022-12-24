@@ -2,9 +2,9 @@
 
 ## Description
 
-This is a silly little app for the BBC Micro which smoothly scrolls large, (kinda!) anti-aliased text across the screen at 50fps. If you've got an Econet then it can scroll the message across multiple screens.
+This is a demo for the BBC Micro which smoothly scrolls large, (kinda!) anti-aliased text across the screen at 50fps. If you've got an Econet then it can scroll the message across multiple screens.
 
-The app is mostly implemented in 6502 assembly language with a menu system written in BBC BASIC.
+The program is mostly implemented in 6502 assembly language with a menu system written in BBC BASIC.
 
 ## Demo
 
