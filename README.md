@@ -6,9 +6,9 @@ This is a demo for the BBC Micro which smoothly scrolls large, (kinda!) anti-ali
 
 The program is mostly implemented in 6502 assembly language with a menu system written in BBC BASIC.
 
-## Demo
+## Demo (sound on!)
 
-https://user-images.githubusercontent.com/909745/209393540-59f1d2c6-4a34-4aca-b0af-24944fc6b147.mp4
+https://user-images.githubusercontent.com/909745/209448748-c88f4287-9389-46d1-bef7-05fedc2c258d.mp4
 
 Credit: music by [Music Unlimited](https://pixabay.com/users/music_unlimited-27600023/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=music&amp;utm_content=124008) from
 [Pixabay](https://pixabay.com//?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=music&amp;utm_content=124008)
