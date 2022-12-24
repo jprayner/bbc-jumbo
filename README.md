@@ -10,9 +10,6 @@ The program is mostly implemented in 6502 assembly language with a menu system w
 
 https://user-images.githubusercontent.com/909745/209448748-c88f4287-9389-46d1-bef7-05fedc2c258d.mp4
 
-Credit: music by [Music Unlimited](https://pixabay.com/users/music_unlimited-27600023/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=music&amp;utm_content=124008) from
-[Pixabay](https://pixabay.com//?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=music&amp;utm_content=124008)
-
 ## Running
 
 Grab `jumbo.ssd` from the [Releases page](https://github.com/jprayner/bbc-jumbo/releases) and load onto your Beeb using your storage solution of choice.
@@ -79,5 +76,7 @@ The process is illustrated in the following sequence diagram:
 
 ### Credits
 
+* Alex Nichol from King's School Worcester who wrote something very similar in the early 90s — this app is a tribute! Get in touch, dude.
 * Kieran Connell for his excellent video on programming the CRTC, including how to do scrolling: https://www.youtube.com/watch?v=dbGRFUNARjw 
-* Alex Nichol from King's School Worcester who wrote something very similar in the early 90s — this app is a tribute!
+* Demo music by [Music Unlimited](https://pixabay.com/users/music_unlimited-27600023/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=music&amp;utm_content=124008) from
+[Pixabay](https://pixabay.com//?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=music&amp;utm_content=124008)
