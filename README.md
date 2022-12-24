@@ -69,6 +69,12 @@ Two separate pointers `scroll_ptr` and `dest_ptr` are maintained to keep track o
 
 ### Econet
 
+The leader sends a copy of the program — including the message to be scrolled — to each follower in turn using an Econet `POKE` operation. A `JSR` operation then causes the follower to jump to the entrypoint of the app where it sits waiting for a broadcast. Once the leader has prepared all followers (upto 253 of them!), a single Econet `TRANSMIT` operation to the broadcast address `&00` kicks off the action in perfect synchronisation!
+
+In order to give the effect of text moving from one screen to another, the leader starts scrolling immediately but the first follower, placed immediately to the left of the leader, delays the start of its scroll by the time it takes for the text to cross the leader's screen. The second follower is delayed by two screen scroll periods, the third by three and so on.
+
+The process is illustrated in the following sequence diagram:
+
 ![jumbo-econet-start](https://user-images.githubusercontent.com/909745/209437851-adfbbd98-eb87-4de3-82f1-0f8324a16d81.svg)
 
 ### Credits
