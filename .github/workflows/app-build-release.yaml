@@ -1,0 +1,31 @@
+name: Build App & Release
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/**'
+      - '.github/workflows/app-build-release.yaml'
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/jprayner/bbc-jumbo-build-image:latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    - name: Build
+      working-directory: ./src
+      run: |
+        beebasm -v -i main.asm -do jumbo.ssd -opt 3
+    - name: Release
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: jumbo.ssd
