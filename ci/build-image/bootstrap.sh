@@ -4,7 +4,7 @@ set -e
 
 echo "Updating distro..."
 apt-get update
-sudo apt install git
+apt install git
 
 echo "==================="
 echo "= Install BeebAsm ="
