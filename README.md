@@ -13,11 +13,9 @@ https://user-images.githubusercontent.com/909745/209393540-59f1d2c6-4a34-4aca-b0
 Credit: music by [Music Unlimited](https://pixabay.com/users/music_unlimited-27600023/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=music&amp;utm_content=124008) from
 [Pixabay](https://pixabay.com//?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=music&amp;utm_content=124008)
 
-## Building
-
-Ensure that you have [BeebAsm](https://github.com/stardot/beebasm) in your PATH and execute `run.sh` to generate `src/jumbo.ssd` disk image which you can load onto your Beeb using your storage solution of choice.
-
 ## Running
+
+Grab `jumbo.ssd` from the [Releases page](https://github.com/jprayner/bbc-jumbo/releases) and load onto your Beeb using your storage solution of choice.
 
 The SSD is bootable so shift+BREAK should do the trick to kick off the menu or alternatively:
 
@@ -29,6 +27,10 @@ Choose the standalone option if you're running on a single machine, supply a mes
 
 If you're lucky enough to have a functioning Econet then selecting this option prompts you to enter the station numbers. The machine on which the menu is running (the "leader") is assumed to be the rightmost machine and you should enter the Econet station numbers of the other "follower" machines from right-to-left.
 
+## Building
+
+Ensure that you have [BeebAsm](https://github.com/stardot/beebasm) in your PATH and execute `make.sh` to generate a `jumbo.ssd` disk image.
+
 ## How does it work?
 
 ### Embiggening
@@ -39,7 +41,7 @@ First, `get_char_ptr_for_ascii` is used to look up the character to be drawn in 
 
 <img width="298" alt="Screenshot 2022-12-23 at 19 08 27" src="https://user-images.githubusercontent.com/909745/209396094-eff06f03-b70b-4516-afd0-6414f114aa2d.png">
 
-Hmmm... a bit lumpy. To improve matters, some extra processing is done (in `print_custom_infill_char`) when a hole pixel is found in the source character: the pixels immediately around it at each of the four compass points are evaluated. Where two lines appear to be intersecting, a little infill lump is drawn. Consider where the two lines of a letter 'L' meet: just inside there, the pixel to the left and the one below will be `1` and so we will draw an infill to the bottom-left. `print_anti_alias_corners` takes the infill flags built up by `print_custom_infill_char` and uses them to look up a custom character in `tables.asm`:
+Hmmm... a bit lumpy. To improve matters, some extra processing is done (in `print_custom_infill_char`) when a hole pixel is found in the source character: the pixels immediately around it at each of the four compass points are evaluated. Where two lines appear to be intersecting, a little infill lump is drawn. Consider where the two lines of a letter 'L' meet: just inside there, the pixel to the left and the one below will be `1` and so we will draw an infill to the bottom-left. `print_anti_alias_corners` takes the infill flags built up by `print_custom_infill_char` and uses them to look up a custom character in `tables.asm` (note the `1`s at the bottom-left):
 
 ```
 .anti_alias_char8    ; BL/BR/TR/TL == 1000
@@ -59,14 +61,17 @@ Our 64x64 characters now look like this:
 
 ### Scrolling
 
-This app runs in screen mode 2 which is 160x256 pixels (20x32 characters). Each byte in screen memory describes two pixels (with the four bits per pixel giving a palette of 8 colours). It starts at &3000 and ends at &7fff. By adding one to the start address of screen memory in the CRTC, the whole screen appears to move left by 2 pixels instantly without needing to do any memory copying. This is great because the Beeb doesn't have any blitting capability.
-
-See this excellent video by Kieran Connell on programming the CRTC, including how to do scrolling: https://www.youtube.com/watch?v=dbGRFUNARjw 
+This app runs in screen mode 2 which is 160x256 pixels (20x32 characters). Each byte in screen memory describes two pixels (with the four bits per pixel giving a palette of 8 colours). It starts at `&3000` and ends at `&7fff`. By adding one to the start address of screen memory in the CRTC, the whole screen appears to move left by 2 pixels instantly without needing to do any memory copying. This is great because the Beeb doesn't have any blitting capability.
 
 So all we need to do is fill in the 2 pixels just revealed by the scroll. The challenge is to do this quickly enough to fit within the vertical blanking interval in order to have a nice, smooth animation and to avoid "tearing" artefacts. `render.asm` is therefore optimised to only draw a vertical slice of the character being scrolled in and `scroll.asm` copies this in from the offscreen buffer to the screen. This has the additional advantage of keeping the offscreen buffer small (64 bytes).
 
-Two separate pointers `scroll_ptr` and `dest_ptr` are maintained to keep track of the current scroll position (start of video memory) and where we're writing to (just to the right of the screen). When these advance past the end of video memory, they wrap back to the start. Thus scrolling can continue indefinitely, although the current BASIC launcher currently imposes a limit of 254 chars to the size of the message.
+Two separate pointers `scroll_ptr` and `dest_ptr` are maintained to keep track of the current scroll position (start of video memory) and where we're writing to (just to the right of the screen), respectively. When these advance past the end of video memory, they wrap back to the start. Thus scrolling can continue indefinitely, although the BASIC launcher currently imposes a limit of 254 chars to the size of the message.
 
 ### Econet
 
-TODO
+![jumbo-econet-start](https://user-images.githubusercontent.com/909745/209437851-adfbbd98-eb87-4de3-82f1-0f8324a16d81.svg)
+
+### Credits
+
+* Kieran Connell for his excellent video on programming the CRTC, including how to do scrolling: https://www.youtube.com/watch?v=dbGRFUNARjw 
+* Alex Nichol from King's School Worcester who wrote something very similar in the early 90s — this app is a tribute!
