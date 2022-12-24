@@ -4,7 +4,7 @@ set -e
 
 echo "Updating distro..."
 apt-get update
-apt install -y git
+apt install -y git build-essential
 
 echo "==================="
 echo "= Install BeebAsm ="
