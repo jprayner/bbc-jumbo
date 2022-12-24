@@ -3,11 +3,8 @@ name: Build App & Release
 on:
   workflow_dispatch:
   push:
-    branches:
-      - main
-    paths:
-      - 'src/**'
-      - '.github/workflows/app-build-release.yaml'
+    tags:
+      - "v*.*.*"
 
 jobs:
   build:
