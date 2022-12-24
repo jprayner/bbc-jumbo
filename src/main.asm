@@ -181,5 +181,5 @@ EQUB 0
 .end
 
 SAVE "Code", start, end
-PUTBASIC "MENU"
+PUTBASIC "Menu"
 PUTFILE "BOOT", "!BOOT", &FFFF
