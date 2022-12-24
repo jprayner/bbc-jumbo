@@ -2,6 +2,8 @@ name: Create and publish build image
 
 on:
   push:
+    tags-ignore:
+      - '**'
     paths:
       - 'ci/build-image/**'
       - '.github/workflows/build-image-deploy.yaml'
