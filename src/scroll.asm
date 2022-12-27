@@ -1,8 +1,8 @@
 ;------------------------------------------------------------------------------
-; Sets up scroll pointer to point to start of video memory and destination
-; pointer to just to right of visible screen.
-;------------------------------------------------------------------------------
 .init_scroll
+;   Sets up scroll pointer to point to start of video memory and destination
+;   pointer to just to right of visible screen.
+;------------------------------------------------------------------------------
 {
     ; note CRTC start address is regular addr. / 8 (hence MOD/DIV 2048)
     lda #VID_MEM_START MOD 2048 : sta scroll_ptr
@@ -25,13 +25,13 @@
 }
 
 ;------------------------------------------------------------------------------
-; Waits an appropriate number of frames before beginning to scroll, so that
-; text appears to flow from one screen to the next.
+.delay_scroll_start
+;   Waits an appropriate number of frames before beginning to scroll, so that
+;   text appears to flow from one screen to the next.
 ;
 ;   num_screens_delay:  Number of screens-worth of scrolling to wait before
 ;                       returning.
 ;------------------------------------------------------------------------------
-.delay_scroll_start
 {
     ldx num_screens_delay
     .delay_n_pages_loop
@@ -53,10 +53,11 @@
 }
 
 ;------------------------------------------------------------------------------
-; Scrolls a single, 64-pixel width character onto the screen.
+.scroll_single_char
+;   Scrolls a single, 64-pixel width character onto the screen.
+;
 ;   A: ASCII character to show
 ;------------------------------------------------------------------------------
-.scroll_single_char
 {
     sta current_char
 
@@ -132,16 +133,16 @@
 }
 
 ;------------------------------------------------------------------------------
-; Copies a 2x64-pixel slice of the current character from the offscreen buffer
-; to the screen.
+.copy_2px_strip
+;   Copies a 2x64-pixel slice of the current character from the offscreen
+;   buffer to the screen.
 ;
 ;   dest_ptr:   Current on-screen destination address (just to the right of
 ;               visible)
-;   A: ASCII character to show
+;   A:          ASCII character to show
+;   X:          2-pixel vertical strip index within enlarged character (in
+;               range 0-31, given we have 64-pixel wide characters)
 ;------------------------------------------------------------------------------
-
-; x: 2-pixel vertical strip index within character (in range 0-31, given we have 64-pixel wide characters)
-.copy_2px_strip
 {
     txa
     pha
@@ -217,11 +218,13 @@
 }
 
 ;------------------------------------------------------------------------------
-; If screen memory point goes past end of screen (&7fff), wrap back to start 
-; (&3000) by subtracting &5000.
-;------------------------------------------------------------------------------
-
 .handle_address_wrap
+;   If screen memory pointer (dest_ptr) goes past end of screen (&7fff), wrap
+;   back to start (&3000) by subtracting &5000.
+;
+;   dest_ptr:   Current on-screen destination address (just to the right of
+;               right-most visible pixels)
+;------------------------------------------------------------------------------
 {
     lda dest_ptr + 1
     cmp #&80

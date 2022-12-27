@@ -1,8 +1,8 @@
 ;------------------------------------------------------------------------------
-; Implements a short delay, useful for Econet retries or slowing things down
-; during debugging.
-;------------------------------------------------------------------------------
 .delay
+;   Implements a short delay, useful for Econet retries or slowing things down
+;   during debugging.
+;------------------------------------------------------------------------------
 {
     pha
     lda #$00
@@ -19,11 +19,11 @@
 }
 
 ;------------------------------------------------------------------------------
-; Waits for any keypress. Does so by temporarily enabling System VIA interrups,
-; calling OSRDCH, and then disabling the interrupts again. Useful for debugging
-; purposes.
-;------------------------------------------------------------------------------
 .wait_key
+;   Waits for any keypress. Does so by temporarily enabling System VIA
+;   interrups, calling OSRDCH, and then disabling the interrupts again (except
+;   VSYNC). Useful for debugging.
+;------------------------------------------------------------------------------
 {
     sei
         lda #%11111111   ; enable all System VIA interrupts

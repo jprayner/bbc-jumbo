@@ -43,7 +43,8 @@ ORG &2000
 GUARD &26FF
 
 ;------------------------------------------------------------------------------
-; Entrypoint to application.
+.start
+;   Entrypoint to application.
 ;
 ;   run_mode:           Determines if we are standalone, leader or follower
 ;   num_screens_delay:  How long to wait before starting to scroll: first
@@ -51,7 +52,6 @@ GUARD &26FF
 ;                       0 for standalone or leader. 
 ;   message:            Message to scroll, terminated by &0d.
 ;------------------------------------------------------------------------------
-.start
 {
     lda run_mode
     cmp #RUN_MODE_STANDALONE
@@ -63,26 +63,27 @@ GUARD &26FF
 }
 
 ;------------------------------------------------------------------------------
-; Leader sends a broadcast to all stations on the network to start scrolling
-; before starting itself.
-;------------------------------------------------------------------------------
 .start_leader
+;   Leader sends a broadcast to all stations on the network to start scrolling
+;   before starting itself.
+;------------------------------------------------------------------------------
 {
     jsr broadcast_start
     jmp start_scrolling
 }
 
 ;------------------------------------------------------------------------------
-; Follower waits for leader's broadcast before start to scroll.
-;------------------------------------------------------------------------------
 .start_follower
+;   Follower waits for leader's broadcast before start to scroll.
+;------------------------------------------------------------------------------
 {
     jsr wait_broadcast_start
     jmp start_scrolling
 }
 
 ;------------------------------------------------------------------------------
-; Main scrolling loop.
+.start_scrolling
+;   Main scrolling loop.
 ;
 ;   run_mode:           Determines if we are standalone, leader or follower
 ;   num_screens_delay:  How long to wait before starting to scroll: first
@@ -90,7 +91,6 @@ GUARD &26FF
 ;                       0 for standalone or leader. 
 ;   message:            Message to scroll, terminated by &0d.
 ;------------------------------------------------------------------------------
-.start_scrolling
 {
     sei
         lda #%01111111   ; disable all System VIA interrupts
@@ -158,8 +158,8 @@ INCLUDE "econet.asm"
 INCLUDE "tables.asm"
 
 ;------------------------------------------------------------------------------
-; Arguments follow. Remember to update first line of Menu BASIC programme if
-; these addresses change.
+; Launch arguments follow. Remember to update first line of Menu BASIC
+; program if these addresses change.
 ;------------------------------------------------------------------------------
 ORG &2700
 ; Manner in which app is being launched: RUN_MODE_STANDALONE,

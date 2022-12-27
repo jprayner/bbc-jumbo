@@ -1,8 +1,9 @@
 ;------------------------------------------------------------------------------
-; Called by BASIC launcher Menu to start the application on a remote machine.
-; This is done by performing two immediate (non-cooperative) operations: a POKE
-; to load the app into memory — including its start args and message to be
-; displayed — followed by a jsr to start it.
+.launch_app_remote
+;   Called by BASIC launcher Menu to start the application on a remote machine.
+;   This is done by performing two immediate (non-cooperative) operations: a
+;   POKE to load the app into memory — including its start args and message to
+;   be displayed — followed by a jsr to start it.
 ;
 ;   A:                  Econet station number
 ;   run_mode:           Should be set to RUN_MODE_ECONET_FOLLOWER
@@ -11,7 +12,6 @@
 ;                       etc.
 ;   message:            Message to scroll, terminated by &0d.
 ;------------------------------------------------------------------------------
-.launch_app_remote
 {
   sta jsr_control_block_station
 
@@ -30,11 +30,12 @@
 }
 
 ;------------------------------------------------------------------------------
-; POKES the app into memory on the remote machine (from start to end),
-; including its start args.
+.poke_app
+;   POKES the app into memory on the remote machine (from start to end),
+;   including its start args.
+;
 ;   A:                  Econet station number
 ;------------------------------------------------------------------------------
-.poke_app
 {
   pha
   sta poke_control_block_station
@@ -91,10 +92,10 @@
 }
 
 ;------------------------------------------------------------------------------
-; Sends an Econet broadcast packet from the leader to kick off scrolling on all
-; followers at the same time.
-;------------------------------------------------------------------------------
 .broadcast_start
+;   Sends an Econet broadcast packet from the leader to kick off scrolling on
+;   all followers at the same time.
+;------------------------------------------------------------------------------
 {
   lda #10
   sta econet_retries
@@ -139,10 +140,10 @@
 }
 
 ;------------------------------------------------------------------------------
-; Waits for an Econet broadcast packet from the leader before starting scroll
-; on a follower.
-;------------------------------------------------------------------------------
 .wait_broadcast_start
+;   Waits for an Econet broadcast packet from the leader before starting scroll
+;   on a follower.
+;------------------------------------------------------------------------------
 {
   ; read jsr args and clear protection bits
   lda #&12
